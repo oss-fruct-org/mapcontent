@@ -7,16 +7,14 @@
         android:layout_height="match_parent"
         android:layout_width="match_parent"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/fragment"
+        android:layout_above="@+id/download_fragment"
         />
 
     <FrameLayout
-        android:id="@id/fragment"
-        android:name="org.fruct.oss.socialnavigator.fragments.other.DownloadProgressFragment"
-
+        android:id="@id/download_fragment"
+        android:name="org.fruct.oss.mapcontent.fragments.DownloadProgressFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-
         tools:layout="@layout/fragment_download_progress"/>
 </RelativeLayout>

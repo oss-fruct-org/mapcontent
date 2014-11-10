@@ -103,7 +103,7 @@ public class ContentFragment extends Fragment
 		if (downloadFragment == null) {
 			downloadFragment = new DownloadProgressFragment();
 			getActivity().getSupportFragmentManager().beginTransaction()
-					.add(R.id.fragment, downloadFragment, "download-fragment")
+					.add(R.id.download_fragment, downloadFragment, "download-fragment")
 					.hide(downloadFragment)
 					.addToBackStack(null)
 					.commit();
