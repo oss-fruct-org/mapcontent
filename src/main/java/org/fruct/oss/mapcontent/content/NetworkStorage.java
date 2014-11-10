@@ -66,6 +66,12 @@ public class NetworkStorage implements ContentStorage {
 						item.setNetworkStorage(this);
 						ret.add(item);
 					}
+
+					if (item.getType().equals(RemoteContentService.MAPSFORGE_MAP)) {
+						item.setNetworkStorage(this);
+						ret.add(item);
+					}
+
 				}
 
 				countSuccessful++;

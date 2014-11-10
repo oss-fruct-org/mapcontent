@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
@@ -104,6 +105,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 		handler = new Handler(getMainLooper());
 		bindService(new Intent(this, DataService.class), dataServiceConnection, BIND_AUTO_CREATE);
+
+		//LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+		//lm.req
 
 		/*LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver = new BroadcastReceiver() {
 			@Override
