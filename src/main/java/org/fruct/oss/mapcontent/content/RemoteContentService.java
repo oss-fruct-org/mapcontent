@@ -2,18 +2,15 @@ package org.fruct.oss.mapcontent.content;
 
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.contenttypes.GraphhopperMapType;
@@ -57,8 +54,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 	private DataService dataService;
 	private DataServiceConnection dataServiceConnection = new DataServiceConnection();
-
-	private BroadcastReceiver locationReceiver;
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -106,21 +101,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler = new Handler(getMainLooper());
 		bindService(new Intent(this, DataService.class), dataServiceConnection, BIND_AUTO_CREATE);
 
-		//LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-		//lm.req
-
-		/*LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				Location newLocation = intent.getParcelableExtra(RoutingService.ARG_LOCATION);
-				if (location == null || newLocation.distanceTo(location) > LOCATION_UPDATE_DIST) {
-					location = newLocation;
-					newLocation(location);
-				}
-			}
-		}, new IntentFilter(RoutingService.BC_LOCATION));*/
-
 		contentTypes.put(GRAPHHOPPER_MAP, graphhopperMapType = new GraphhopperMapType(this, null, regions));
 		contentTypes.put(MAPSFORGE_MAP, new MapsforgeMapType(this, regions));
 	}
@@ -135,11 +115,16 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			digestCache.close();
 		}
 
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver);
-
 		executor.shutdownNow();
 
 		super.onDestroy();
+	}
+
+	public void setLocation(Location newLocation) {
+		if (location == null || newLocation.distanceTo(location) > LOCATION_UPDATE_DIST) {
+			location = newLocation;
+			newLocation(location);
+		}
 	}
 
 	public void addListener(Listener listener) {
