@@ -28,6 +28,8 @@ import android.widget.Toast;
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,20 +43,19 @@ import java.util.Map;
 public class ContentFragment extends Fragment
 		implements AdapterView.OnItemClickListener, RemoteContentService.Listener,
 		ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener,
-		ActionBar.OnNavigationListener{
+		ActionBar.OnNavigationListener, RemoteContentServiceConnectionListener {
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
     public ContentFragment() {
         // Required empty public constructor
     }
 
-	private RemoteContentConnection remoteContentConnection = new RemoteContentConnection();
+	private RemoteContentServiceConnection remoteContentServiceConnection
+			= new RemoteContentServiceConnection(this);
+	private RemoteContentService remoteContent;
 
 	private ListView listView;
 	private ContentAdapter adapter;
-
-	private MenuItem downloadItem;
-	private MenuItem useItem;
 
 	// Last selected item
 	private ContentListItem currentItem;
@@ -62,7 +63,6 @@ public class ContentFragment extends Fragment
 
 	private LocalContentState filteredState;
 
-	private RemoteContentService remoteContent;
 
 	private List<ContentItem> localItems = Collections.emptyList();
 	private List<ContentItem> remoteItems = Collections.emptyList();
@@ -115,8 +115,25 @@ public class ContentFragment extends Fragment
 		}
 
 		downloadFragment.setListener(this);
-		getActivity().bindService(new Intent(getActivity(), RemoteContentService.class), remoteContentConnection, Context.BIND_AUTO_CREATE);
 		setHasOptionsMenu(true);
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		remoteContentServiceConnection.bindService(getActivity());
+	}
+
+	@Override
+	public void onPause() {
+		if (remoteContent != null) {
+			remoteContent.removeListener(this);
+			remoteContent = null;
+		}
+
+		remoteContentServiceConnection.unbindService(getActivity());
+
+		super.onPause();
 	}
 
 	private void setupSpinner() {
@@ -130,18 +147,6 @@ public class ContentFragment extends Fragment
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.putString("current-item-idx", currentItemName);
-	}
-
-	@Override
-	public void onDestroy() {
-		if (remoteContent != null) {
-			remoteContent.removeListener(this);
-			remoteContent = null;
-		}
-
-		getActivity().unbindService(remoteContentConnection);
-
-		super.onDestroy();
 	}
 
 	@Override
@@ -161,14 +166,19 @@ public class ContentFragment extends Fragment
 		return super.onOptionsItemSelected(item);
 	}
 
-	public void remoteContentServiceReady(RemoteContentService service) {
-		remoteContent = service;
+	@Override
+	public void onRemoteContentServiceConnected(RemoteContentService remoteContentService) {
+		remoteContent = remoteContentService;
 		remoteContent.addListener(this);
 
 		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalItems()),
-				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
+						remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
 	}
 
+	@Override
+	public void onRemoteContentServiceDisconnected() {
+		remoteContent = null;
+	}
 
 	private void setContentList(final List<ContentItem> localItems, final List<ContentItem> remoteItems) {
 		new GenerateContentList(localItems, remoteItems, filteredState).execute();
@@ -446,19 +456,6 @@ public class ContentFragment extends Fragment
 			if (contentListItems != null && adapter != null) {
 				adapter.setItems(contentListItems);
 			}
-		}
-	}
-
-	private class RemoteContentConnection implements ServiceConnection {
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder binder) {
-			RemoteContentService service = ((RemoteContentService.Binder) binder).getService();
-			remoteContentServiceReady(service);
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-
 		}
 	}
 

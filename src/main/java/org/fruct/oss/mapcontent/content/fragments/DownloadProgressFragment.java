@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
@@ -22,11 +24,6 @@ public class DownloadProgressFragment extends Fragment implements View.OnClickLi
 	private TextView textView2;
 
 	public DownloadProgressFragment() {
-	}
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
 	}
 
 	@Override
@@ -46,6 +43,16 @@ public class DownloadProgressFragment extends Fragment implements View.OnClickLi
 		return view;
 	}
 
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		// Android doesn't preserve fragment hidden state
+		if (savedInstanceState != null && savedInstanceState.getBoolean("hidden") && !isHidden()) {
+			getFragmentManager().beginTransaction().hide(this).commit();
+		}
+	}
+
 	public void startDownload() {
 		if (isHidden()) {
 			getFragmentManager().beginTransaction()
@@ -53,6 +60,12 @@ public class DownloadProgressFragment extends Fragment implements View.OnClickLi
 					.show(this)
 					.commit();
 		}
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putBoolean("hidden", isHidden());
 	}
 
 	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
