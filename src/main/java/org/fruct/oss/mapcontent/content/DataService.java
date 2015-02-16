@@ -1,5 +1,6 @@
 package org.fruct.oss.mapcontent.content;
 
+import android.app.IntentService;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class DataService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class DataService extends Service {
 	private static final Logger log = LoggerFactory.getLogger(DataService.class);
 
 	private Binder binder = new Binder();
@@ -42,9 +43,6 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 
 	private CountDownLatch dataListenerLatch;
 
-	public DataService() {
-	}
-
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return DataService.START_NOT_STICKY;
@@ -56,9 +54,8 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 		log.trace("onCreate");
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-		pref.registerOnSharedPreferenceChangeListener(this);
-
 		dataPath = pref.getString(Settings.PREF_STORAGE_PATH, null);
+
 		if (dataPath == null) {
 			DirUtil.StorageDirDesc[] contentPaths = DirUtil.getPrivateStorageDirs(this);
 			dataPath = contentPaths[0].path;
@@ -71,7 +68,6 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 	@Override
 	public void onDestroy() {
 		log.trace("onDestroy");
-		pref.unregisterOnSharedPreferenceChangeListener(this);
 		super.onDestroy();
 	}
 
@@ -109,7 +105,7 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 		return dataPath;
 	}
 
-	@Override
+	/*@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if (key.equals(Settings.PREF_STORAGE_PATH)) {
 			String newDataPath = sharedPreferences.getString(key, null);
@@ -117,7 +113,7 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 				migrateData(newDataPath);
 			}
 		}
-	}
+	}*/
 
 	private void migrateData(final String newDataPath) {
 		// Migration in progress

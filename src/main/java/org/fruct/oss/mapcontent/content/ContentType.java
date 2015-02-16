@@ -104,7 +104,7 @@ public abstract class ContentType {
 	}
 
 	synchronized void commitContentItems() {
-		// Current item hash stored but corresponding item didn't loaded
+		// Current item hash stored but corresponding item haven't been loaded
 		if (currentItemHash != null && currentItem == null) {
 			currentItemHash = null;
 			deactivateCurrentItem();

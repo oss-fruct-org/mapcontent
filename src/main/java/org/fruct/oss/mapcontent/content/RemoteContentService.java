@@ -256,6 +256,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 					notifyErrorInitializing(e);
 				}
 
+				if (location != null) {
+					newLocation(location);
+				}
+
 				try {
 					RemoteContentService.this.remoteItems = Collections.emptyList();
 					networkStorage.updateContentList();
