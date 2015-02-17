@@ -2,6 +2,7 @@ package org.fruct.oss.mapcontent.content;
 
 import android.location.Location;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface ContentManager {
@@ -44,10 +45,20 @@ public interface ContentManager {
 	 * @param networkContentItem remote content item
 	 * @return local content item
 	 */
-	ContentItem downloadContentItem(NetworkContentItem networkContentItem);
+	ContentItem downloadContentItem(NetworkContentItem networkContentItem) throws IOException;
 
 	/**
 	 * Delete all previously unpacked content items that not active ({@link #activateContentItem}).
 	 */
 	void garbageCollect();
+
+	/**
+	 * Migrate all content from content root to new root
+	 * @param newRootPath new root
+	 */
+	void migrate(String newRootPath);
+
+	public interface Listener {
+		void downloadStateUpdated(ContentItem item, int downloaded, int max);
+	}
 }

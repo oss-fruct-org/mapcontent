@@ -13,6 +13,4 @@ public interface ContentItem {
 
 	boolean isDownloadable();
 	boolean isReadonly();
-
-	InputStream loadContentItem() throws IOException;
 }

@@ -32,10 +32,19 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 	public ContentItem storeContentItem(ContentItem remoteContentItem, InputStream input) throws IOException {
 		OutputStream output = null;
 
-		String fileStr = path + "/" + remoteContentItem.getName();
+		String suffix;
+		if (remoteContentItem.getName().endsWith(".ghz")) {
+			suffix = ".ghz";
+		} else if (remoteContentItem.getName().endsWith(".map")) {
+			suffix = ".map";
+		} else {
+			throw new IOException("Wrong file extension");
+		}
 
-		File outputFile = new File(fileStr + ".roadsignsdownload");
-		File targetFile = new File(fileStr);
+		String fileNameStr = path + "/" + remoteContentItem.getHash() + suffix;
+
+		File outputFile = new File(path, fileNameStr + ".roadsignsdownload");
+		File targetFile = new File(path, fileNameStr);
 
 		try {
 			output = new FileOutputStream(outputFile);
@@ -50,6 +59,7 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 			localItem.setType(remoteContentItem.getType());
 			localItem.setHash(remoteContentItem.getHash());
 			localItem.setRegionId(remoteContentItem.getRegionId());
+			localItem.setFileName(fileNameStr);
 			items.add(localItem);
 
 			return localItem;

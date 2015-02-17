@@ -51,6 +51,7 @@ public class GraphhopperMapType extends ContentType {
 			return region.testHit(location.getLatitude(), location.getLongitude());
 		}
 	}
+
 	private Region createRegion(ContentItem item) throws IOException {
 		File file = new File(((DirectoryContentItem) item).getPath());
 

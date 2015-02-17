@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class DirectoryContentItem implements ContentItem {
 	private static final Logger log = LoggerFactory.getLogger(DirectoryStorage.class);
@@ -21,10 +20,12 @@ public class DirectoryContentItem implements ContentItem {
 
 	private String hash;
 
+	private String fileName;
+
 	public DirectoryContentItem(DirectoryStorage storage, KeyValue digestCache, String name) {
 		this.storage = storage;
-		this.name = name;
 		this.digestCache = digestCache;
+		this.name = name;
 	}
 
 	public void setType(String type) {
@@ -94,12 +95,7 @@ public class DirectoryContentItem implements ContentItem {
 	}
 
 	public String getPath() {
-		return storage.getPath() + "/" + getName();
-	}
-
-	@Override
-	public InputStream loadContentItem() throws IOException {
-		return new FileInputStream(getPath());
+		return storage.getPath() + "/" + fileName;
 	}
 
 	public void setHash(String hash) {
@@ -110,4 +106,11 @@ public class DirectoryContentItem implements ContentItem {
 		this.regionId = regionId;
 	}
 
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
 }

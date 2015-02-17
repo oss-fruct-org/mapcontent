@@ -56,19 +56,23 @@ public class DirectoryStorage implements ContentStorage {
 	}
 
 	private ContentItem createContentItem(File file) throws IOException {
+		DirectoryContentItem item = null;
+
 		if (file.getName().endsWith(".map")) {
-			DirectoryContentItem item =  createBaseContentItem(file);
+			item = createBaseContentItem(file);
 			item.setType("mapsforge-map");
 			fillMapMetadata(file, item);
-			return item;
 		} else if (file.getName().endsWith(".ghz")) {
-			DirectoryContentItem item =  createBaseContentItem(file);
+			item = createBaseContentItem(file);
 			item.setType("graphhopper-map");
 			fillGhzMetadata(file, item);
-			return item;
-		} else {
-			return null;
 		}
+
+		if (item != null) {
+			item.setFileName(file.toString());
+		}
+
+		return item;
 	}
 
 	private DirectoryContentItem createBaseContentItem(File file) throws FileNotFoundException {
@@ -80,6 +84,7 @@ public class DirectoryStorage implements ContentStorage {
 		String lang = locale.getLanguage();
 
 		item.setRegionId(metadata.getRegionId());
+		item.setName(metadata.getName());
 		if (metadata.getDescription().containsKey(lang)) {
 			item.setDescription(metadata.getDescription().get(lang));
 		} else if (metadata.getDescription().containsKey("en")) {

@@ -4,7 +4,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import static org.fruct.oss.mapcontent.content.utils.XmlUtil.readNumber;
 import static org.fruct.oss.mapcontent.content.utils.XmlUtil.readText;
@@ -81,11 +80,6 @@ public class NetworkContentItem implements ContentItem {
 		return getClass().getName();
 	}
 
-
-	@Override
-	public InputStream loadContentItem() throws IOException {
-		return storage.loadContentItem(getUrl());
-	}
 
 	void setNetworkStorage(NetworkStorage storage) {
 		this.storage = storage;
