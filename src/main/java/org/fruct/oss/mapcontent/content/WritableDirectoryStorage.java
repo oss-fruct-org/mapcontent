@@ -41,7 +41,7 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 			throw new IOException("Wrong file extension");
 		}
 
-		String fileNameStr = path + "/" + remoteContentItem.getHash() + suffix;
+		String fileNameStr = remoteContentItem.getHash() + suffix;
 
 		File outputFile = new File(path, fileNameStr + ".roadsignsdownload");
 		File targetFile = new File(path, fileNameStr);

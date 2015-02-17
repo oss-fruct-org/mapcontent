@@ -69,7 +69,7 @@ public class DirectoryStorage implements ContentStorage {
 		}
 
 		if (item != null) {
-			item.setFileName(file.toString());
+			item.setFileName(file.getName());
 		}
 
 		return item;

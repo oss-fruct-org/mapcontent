@@ -18,12 +18,13 @@ public class UnpackedDir {
 
 	/**
 	 * Create from known contentItem
-	 * @param unpackedRootPath root path for unpacked archives
+	 * @param unpackedRootDir root path for unpacked archives
 	 * @param contentItem content item
 	 */
 	public UnpackedDir(File unpackedRootDir, ContentItem contentItem) {
 		this.unpackedDir = new File(unpackedRootDir, contentItem.getHash());
-		writeString(new File(unpackedDir, "content-type.info"), contentItem.getType());
+		unpackedDir.mkdirs();
+		writeString(new File(unpackedDir, "content-type.txt"), contentItem.getType());
 	}
 
 	/**
@@ -81,6 +82,7 @@ public class UnpackedDir {
 			writer.print(str);
 			writer.flush();
 		} catch (FileNotFoundException ignored) {
+			ignored.toString();
 		} finally {
 			Utils.silentClose(writer);
 		}

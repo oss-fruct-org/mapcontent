@@ -6,6 +6,7 @@ import android.location.Location;
 import android.preference.PreferenceManager;
 
 import org.apache.commons.io.IOUtils;
+import org.fruct.oss.mapcontent.BuildConfig;
 import org.fruct.oss.mapcontent.content.contenttype2.*;
 import org.fruct.oss.mapcontent.content.contenttype2.ContentType;
 import org.fruct.oss.mapcontent.content.contenttypes.GraphhopperMapType;
@@ -40,11 +41,13 @@ public class ContentManagerImpl implements ContentManager {
 	public static final String[] REMOTE_CONTENT_URLS = {
 			"http://oss.fruct.org/projects/roadsigns/root.xml"};
 
+
 	public static final String GRAPHHOPPER_MAP = "graphhopper-map";
 	public static final String MAPSFORGE_MAP = "mapsforge-map";
 	public static final String SAFEGUARD_STRING = "content-manager";
 
 	private String contentRootPath;
+	private KeyValue digestCache;
 
 	private final SharedPreferences pref;
 
@@ -63,7 +66,12 @@ public class ContentManagerImpl implements ContentManager {
 
 	public ContentManagerImpl(Context context, String contentRootPath, KeyValue digestCache,
 							  HashMap<String, ContentType> contentTypes) {
+		if (true) {
+			REMOTE_CONTENT_URLS[0] = "http://kappa.cs.petrsu.ru/~ivashov/mordor.xml";
+		}
+
 		this.contentRootPath = contentRootPath;
+		this.digestCache = digestCache;
 
 		pref = PreferenceManager.getDefaultSharedPreferences(context);
 
@@ -76,7 +84,7 @@ public class ContentManagerImpl implements ContentManager {
 			localStorages.add(storage);
 		}
 
-		contentTypes.putAll(contentTypes);
+		this.contentTypes.putAll(contentTypes);
 
 		refreshLocalItemsList();
 		refreshRemoteItemsList();
@@ -208,6 +216,86 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public synchronized void garbageCollect() {
+		List<File> activePackageFiles = new ArrayList<File>();
+		List<File> activeUnpackedFiles = new ArrayList<File>();
+
+		for (ContentType contentType : contentTypes.values()) {
+			String activePackagePath = pref.getString("pref-" + contentType.getName() + "-active-package",
+					null);
+			String activeUnpackedPath = pref.getString("pref-" + contentType.getName() + "-active-unpacked",
+					null);
+
+			File activePackageFile = new File(activePackagePath);
+			File activeUnpackedFile = new File(activeUnpackedPath);
+
+			activePackageFiles.add(activePackageFile);
+			activeUnpackedFiles.add(activeUnpackedFile);
+		}
+
+		List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
+
+		// Delete inactive unpacked directories
+		//List<String> allRoots = new ArrayList<String>(migrationHistory);
+		//allRoots.add(contentRootPath);
+
+		rootLoop:
+		for (String root : migrationHistory) {
+			File rootFile = new File(root, "content-manager");
+
+			if (!rootFile.isDirectory()) {
+				continue;
+			}
+
+			for (File activePackageFile : activePackageFiles) {
+				if (isParent(rootFile, activePackageFile)) {
+					continue rootLoop;
+				}
+			}
+
+			for (File activeUnpackedFile : activeUnpackedFiles) {
+				if (isParent(rootFile, activeUnpackedFile)) {
+					continue rootLoop;
+				}
+			}
+
+			deleteDir(rootFile, SAFEGUARD_STRING);
+		}
+
+		File unpackedRoot = new File(contentRootPath, "/content-manager/unpacked");
+		for (File unpackedDir : unpackedRoot.listFiles()) {
+			if (!activeUnpackedFiles.contains(unpackedDir)) {
+				deleteDir(unpackedDir, SAFEGUARD_STRING);
+			}
+		}
+
+		hashCode();
+
+
+		/*List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
+
+		// Delete inactive unpacked directories
+		List<String> allRoots = new ArrayList<String>(migrationHistory);
+		allRoots.add(contentRootPath);
+
+		for (String contentRoot : allRoots) {
+			File unpackedRoot = new File(contentRoot, "/content-manager/unpacked");
+			for (File unpackedDirFile : unpackedRoot.listFiles()) {
+				//UnpackedDir unpackedDir = new UnpackedDir(unpackedDirFile.getPath());
+				if (!activeUnpackedPaths.contains(unpackedDirFile.getAbsolutePath())) {
+					deleteDir(unpackedDirFile, SAFEGUARD_STRING);
+				}
+			}
+		}
+
+		// Delete historical packages that are not unpacked
+		for (String contentRoot : migrationHistory) {
+			File storageRoot = new File(contentRoot, "/content-manager/storage");
+			UnpackedDir unpackedDir = new UnpackedDir(unpackedDirFile.getPath());
+
+			//DirectoryStorage
+		}
+
+		hashCode();*/
 
 	}
 
@@ -244,6 +332,7 @@ public class ContentManagerImpl implements ContentManager {
 		if (unpackedDir.isUnpacked()) {
 			unpackedDir.markGarbage();
 		}
+		digestCache.delete(contentItem.getName());
 	}
 
 	private void refreshLocalItemsList() {
@@ -346,5 +435,17 @@ public class ContentManagerImpl implements ContentManager {
 		}
 
 		return null;
+	}
+
+	private boolean isParent(File parent, File child) {
+		if (child == null) {
+			return false;
+		}
+
+		if (parent.equals(child)) {
+			return true;
+		}
+
+		return isParent(parent, child.getParentFile());
 	}
 }
