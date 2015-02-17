@@ -203,12 +203,14 @@ public class ContentManagerImpl implements ContentManager {
 			}
 
 			// Old directory now garbage, delete it from content list
-			ContentItem deletedItem = deleteFromLocalList(remoteItem);
+			/*ContentItem deletedItem = deleteFromLocalList(remoteItem);
 			if (deletedItem != null) {
 				garbageItem(deletedItem);
-			}
+			}*/
 
-			return mainLocalStorage.storeContentItem(remoteItem, inputStream);
+			ContentItem newContentItem = mainLocalStorage.storeContentItem(remoteItem, inputStream);
+			localContentItems.add(newContentItem);
+			return newContentItem;
 		} finally {
 			Utils.silentClose(conn);
 		}
