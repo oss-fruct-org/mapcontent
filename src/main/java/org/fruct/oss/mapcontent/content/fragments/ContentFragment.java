@@ -1,13 +1,8 @@
 package org.fruct.oss.mapcontent.content.fragments;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
@@ -27,9 +22,10 @@ import android.widget.Toast;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
+import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.RemoteContentService;
-import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
-import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,18 +37,19 @@ import java.util.List;
 import java.util.Map;
 
 public class ContentFragment extends Fragment
-		implements AdapterView.OnItemClickListener, RemoteContentService.Listener,
+		implements AdapterView.OnItemClickListener,
 		ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener,
-		ActionBar.OnNavigationListener, RemoteContentServiceConnectionListener {
+		ActionBar.OnNavigationListener,
+		ContentServiceConnectionListener, ContentService.Listener {
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
     public ContentFragment() {
         // Required empty public constructor
     }
 
-	private RemoteContentServiceConnection remoteContentServiceConnection
-			= new RemoteContentServiceConnection(this);
-	private RemoteContentService remoteContent;
+	private ContentServiceConnection remoteContentServiceConnection
+			= new ContentServiceConnection(this);
+	private ContentService remoteContent;
 
 	private ListView listView;
 	private ContentAdapter adapter;
@@ -164,20 +161,6 @@ public class ContentFragment extends Fragment
 		}
 
 		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	public void onRemoteContentServiceConnected(RemoteContentService remoteContentService) {
-		remoteContent = remoteContentService;
-		remoteContent.addListener(this);
-
-		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalItems()),
-						remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
-	}
-
-	@Override
-	public void onRemoteContentServiceDisconnected() {
-		remoteContent = null;
 	}
 
 	private void setContentList(final List<ContentItem> localItems, final List<ContentItem> remoteItems) {
@@ -369,6 +352,20 @@ public class ContentFragment extends Fragment
 		}
 
 		return false;
+	}
+
+	@Override
+	public void onContentServiceReady(ContentService contentService) {
+		remoteContent = contentService;
+		remoteContent.addListener(this);
+
+		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalContentItems()),
+				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteContentItems()));
+	}
+
+	@Override
+	public void onContentServiceDisconnected() {
+		remoteContent = null;
 	}
 
 	private class GenerateContentList extends AsyncTask<Void, Void, List<ContentListItem>> {

@@ -236,10 +236,6 @@ public class ContentManagerImpl implements ContentManager {
 
 		List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
 
-		// Delete inactive unpacked directories
-		//List<String> allRoots = new ArrayList<String>(migrationHistory);
-		//allRoots.add(contentRootPath);
-
 		rootLoop:
 		for (String root : migrationHistory) {
 			File rootFile = new File(root, "content-manager");

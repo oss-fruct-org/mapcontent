@@ -3,6 +3,7 @@ package org.fruct.oss.mapcontent.content;
 import java.io.IOException;
 import java.util.List;
 
+
 public class RemoteContentListenerAdapter implements RemoteContentService.Listener {
 	@Override
 	public void localListReady(List<ContentItem> list) {

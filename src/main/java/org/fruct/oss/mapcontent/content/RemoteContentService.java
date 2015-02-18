@@ -39,6 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
+@Deprecated
 public class RemoteContentService extends Service implements DataService.DataListener {
 	private static final Logger log = LoggerFactory.getLogger(RemoteContentService.class);
 
