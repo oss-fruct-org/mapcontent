@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 
-public class RemoteContentListenerAdapter implements RemoteContentService.Listener {
+public class ContentListenerAdapter implements ContentService.Listener {
 	@Override
 	public void localListReady(List<ContentItem> list) {
 
@@ -37,6 +37,16 @@ public class RemoteContentListenerAdapter implements RemoteContentService.Listen
 
 	@Override
 	public void downloadInterrupted(ContentItem item) {
+
+	}
+
+	@Override
+	public void recommendedRegionItemReady(ContentItem contentItem) {
+
+	}
+
+	@Override
+	public void requestContentReload() {
 
 	}
 }

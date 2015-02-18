@@ -233,6 +233,16 @@ public class ContentFragment extends Fragment
 	}
 
 	@Override
+	public void recommendedRegionItemReady(ContentItem contentItem) {
+
+	}
+
+	@Override
+	public void requestContentReload() {
+
+	}
+
+	@Override
 	public void downloadsSelected(List<ContentListSubItem> items) {
 		if (currentItem == null)
 			return;

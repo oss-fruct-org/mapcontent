@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -22,13 +23,15 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class ContentService extends Service {
+public class ContentService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -38,12 +41,14 @@ public class ContentService extends Service {
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private SharedPreferences pref;
 
-	private Future<?> initializationFuture;
 
 	private String dataPath;
 	private List<ContentServiceConnection> initializationListeners = new ArrayList<ContentServiceConnection>();
-	private List<Listener> listeners = new ArrayList<Listener>();
+	private final List<Listener> listeners = new ArrayList<Listener>();
 
+	private Location previousLocation;
+
+	private Future<?> initializationFuture;
 	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
 
 	@Override
@@ -71,10 +76,13 @@ public class ContentService extends Service {
 				notifyInitialized();
 			}
 		});
+
+		pref.registerOnSharedPreferenceChangeListener(this);
 	}
 
 	@Override
 	public void onDestroy() {
+		pref.unregisterOnSharedPreferenceChangeListener(this);
 		executor.shutdown();
 
 		super.onDestroy();
@@ -153,6 +161,9 @@ public class ContentService extends Service {
 					ContentItem localContentItem = contentManager.downloadContentItem(remoteItem);
 					notifyDownloadFinished(contentItem, localContentItem);
 					notifyLocalListReady(getLocalContentItems());
+					if (previousLocation != null) {
+						checkRegion(previousLocation);
+					}
 				} catch (InterruptedIOException e) {
 					notifyDownloadInterrupted(contentItem);
 				} catch (IOException e) {
@@ -180,6 +191,35 @@ public class ContentService extends Service {
 				task.cancel(true);
 			}
 			downloadTasks.clear();
+		}
+	}
+
+	public void setLocation(final Location location) {
+		if (previousLocation == null || location.distanceTo(previousLocation) > 10000) {
+			previousLocation = location;
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					checkRegion(location);
+				}
+			});
+		}
+	}
+
+	public String requestContentItem(ContentItem contentItem) {
+		return contentManager.activateContentItem(contentItem);
+	}
+
+	private void checkRegion(Location location) {
+		Set<String> contentTypes = new HashSet<String>(2);
+		contentTypes.add(ContentManagerImpl.GRAPHHOPPER_MAP);
+		contentTypes.add(ContentManagerImpl.MAPSFORGE_MAP);
+		List<ContentItem> regionContentItems = contentManager.findContentItemsByRegion(location);
+		for (ContentItem contentItem : regionContentItems) {
+			if (contentTypes.remove(contentItem.getType())) {
+				contentManager.unpackContentItem(contentItem);
+				notifyRecommendedRegionItemReady(contentItem);
+			}
 		}
 	}
 
@@ -274,12 +314,55 @@ public class ContentService extends Service {
 		});
 	}
 
+	private void notifyRecommendedRegionItemReady(final ContentItem localItem) {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.recommendedRegionItemReady(localItem);
+					}
+				}
+			}
+		});
+	}
+
+	private void notifyRequestContentReload() {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.requestContentReload();
+					}
+				}
+			}
+		});
+	}
+
+
 	public void test() {
 		Location location = new Location("test");
 		location.setLatitude(61.78);
 		location.setLongitude(34.35);
 
 		List<ContentItem> contentItemsByRegion = contentManager.findContentItemsByRegion(location);
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		if (key.equals(Settings.PREF_STORAGE_PATH)) {
+			final String newPath = sharedPreferences.getString(key, null);
+			if (contentManager != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						contentManager.migrate(newPath);
+						notifyRequestContentReload();
+					}
+				});
+			}
+		}
 	}
 
 	public class Binder extends android.os.Binder {
@@ -299,5 +382,9 @@ public class ContentService extends Service {
 		void errorInitializing(IOException e);
 
 		void downloadInterrupted(ContentItem item);
+
+		void recommendedRegionItemReady(ContentItem contentItem);
+
+		void requestContentReload();
 	}
 }
