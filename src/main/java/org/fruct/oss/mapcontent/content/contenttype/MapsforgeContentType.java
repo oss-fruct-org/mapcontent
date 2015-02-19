@@ -60,8 +60,12 @@ public class MapsforgeContentType implements ContentType {
 		if (bbox.contains(new LatLong(location.getLatitude(), location.getLongitude()))) {
 			// TODO: add precise detection
 			final int zoom = 16;
+
 			Tile tile = new Tile(MercatorProjection.longitudeToTileX(location.getLongitude(), zoom),
-					MercatorProjection.latitudeToTileY(location.getLatitude(), zoom), (byte) zoom);
+					MercatorProjection.latitudeToTileY(location.getLatitude(), zoom),
+					(byte) zoom,
+					mapDatabase.getMapFileInfo().tilePixelSize);
+
 			MapReadResult mapReadResult = mapDatabase.readMapData(tile);
 			if (mapReadResult != null)
 				ret = true;

@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class ContentService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class ContentService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener, ContentManager.Listener {
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -71,6 +71,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
 				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
 				contentManager = new ContentManagerImpl(ContentService.this, dataPath, digestCache, contentTypes);
+				((ContentManagerImpl) contentManager).setListener(ContentService.this);
 				notifyInitialized();
 			}
 		});
@@ -361,6 +362,11 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				});
 			}
 		}
+	}
+
+	@Override
+	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
+		notifyDownloadStateUpdated(item, downloaded, max);
 	}
 
 	public class Binder extends android.os.Binder {

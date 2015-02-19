@@ -259,8 +259,6 @@ public class ContentManagerImpl implements ContentManager {
 			}
 		}
 
-		hashCode();
-
 
 		/*List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
 
