@@ -5,7 +5,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -14,9 +13,8 @@ import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
-import org.fruct.oss.mapcontent.content.contenttype2.*;
-import org.fruct.oss.mapcontent.content.contenttype2.ContentType;
-import org.fruct.oss.mapcontent.content.fragments.ContentFragment;
+import org.fruct.oss.mapcontent.content.contenttype.*;
+import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 
 import java.io.IOException;

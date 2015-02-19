@@ -5,12 +5,7 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.PreferenceManager;
 
-import org.apache.commons.io.IOUtils;
-import org.fruct.oss.mapcontent.BuildConfig;
-import org.fruct.oss.mapcontent.content.contenttype2.*;
-import org.fruct.oss.mapcontent.content.contenttype2.ContentType;
-import org.fruct.oss.mapcontent.content.contenttypes.GraphhopperMapType;
-import org.fruct.oss.mapcontent.content.contenttypes.MapsforgeMapType;
+import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.utils.DigestInputStream;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.ProgressInputStream;
@@ -25,10 +20,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -325,13 +318,13 @@ public class ContentManagerImpl implements ContentManager {
 				.apply();
 	}
 
-	private void garbageItem(ContentItem contentItem) {
+	/*private void garbageItem(ContentItem contentItem) {
 		UnpackedDir unpackedDir = new UnpackedDir(new File(contentRootPath), contentItem);
 		if (unpackedDir.isUnpacked()) {
 			unpackedDir.markGarbage();
 		}
 		digestCache.delete(contentItem.getName());
-	}
+	}*/
 
 	private void refreshLocalItemsList() {
 		try {

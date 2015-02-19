@@ -1,13 +1,10 @@
-package org.fruct.oss.mapcontent.content.contenttypes;
+package org.fruct.oss.mapcontent.content.contenttype;
 
-import android.content.Context;
 import android.location.Location;
 
 import org.fruct.oss.mapcontent.content.ContentItem;
-import org.fruct.oss.mapcontent.content.ContentType;
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 import org.fruct.oss.mapcontent.content.DirectoryContentItem;
-import org.fruct.oss.mapcontent.content.RemoteContentService;
-import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.utils.Region;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
@@ -20,27 +17,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
-public class MapsforgeMapType extends ContentType {
-	private static final Logger log = LoggerFactory.getLogger(MapsforgeMapType.class);
-	private Map<String, Region> regions;
+public class MapsforgeContentType implements ContentType {
+	private static final Logger log = LoggerFactory.getLogger(MapsforgeContentType.class);
 
-	public MapsforgeMapType(Context context, Map<String, Region> regions) {
-		super(context, RemoteContentService.MAPSFORGE_MAP, "mapsforge-map-current-hash");
-		this.regions = regions;
+	private final Map<String, Region> regionsCache;
+
+	public MapsforgeContentType(Map<String, Region> regions) {
+		this.regionsCache = regions;
 	}
 
 	@Override
-	protected void onItemAdded(ContentItem item) {
-
+	public void unpackContentItem(ContentItem contentItem, String contentItemPackageFile, String unpackedPath) throws IOException {
+		// Nothing to unpack
 	}
 
 	@Override
-	protected boolean checkLocation(Location location, ContentItem contentItem) {
+	public Region extractRegion(ContentItem item, String contentItemPackageFile) {
+		return null;
+	}
+
+	@Override
+	public boolean checkRegion(ContentItem contentItem, String contentItemPackageFile, Location location) {
 		boolean ret = false;
 
-		Region region = regions.get(contentItem.getRegionId());
+		Region region = regionsCache.get(contentItem.getRegionId());
 		if (region != null) {
 			return region.testHit(location.getLatitude(), location.getLongitude());
 		}
@@ -67,24 +70,12 @@ public class MapsforgeMapType extends ContentType {
 		mapDatabase.closeFile();
 
 		return ret;
+
 	}
 
 	@Override
-	protected void activateItem(ContentItem item) {
-		pref.edit().putString(Settings.OFFLINE_MAP, item.getName()).apply();
+	public String getName() {
+		return ContentManagerImpl.MAPSFORGE_MAP;
 	}
 
-	@Override
-	protected boolean isCurrentItemActive(ContentItem item) {
-		return true;
-	}
-
-	@Override
-	protected void deactivateCurrentItem() {
-		super.deactivateCurrentItem();
-
-		pref.edit().remove(Settings.OFFLINE_MAP)
-				.remove(configKey)
-				.apply();
-	}
 }

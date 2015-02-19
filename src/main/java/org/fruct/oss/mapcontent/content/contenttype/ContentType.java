@@ -1,4 +1,4 @@
-package org.fruct.oss.mapcontent.content.contenttype2;
+package org.fruct.oss.mapcontent.content.contenttype;
 
 import android.location.Location;
 

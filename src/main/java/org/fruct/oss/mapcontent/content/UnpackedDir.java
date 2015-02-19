@@ -14,8 +14,6 @@ import java.io.Writer;
 public class UnpackedDir {
 	private File unpackedDir;
 
-	private String contentType;
-
 	/**
 	 * Create from known contentItem
 	 * @param unpackedRootDir root path for unpacked archives
@@ -24,7 +22,7 @@ public class UnpackedDir {
 	public UnpackedDir(File unpackedRootDir, ContentItem contentItem) {
 		this.unpackedDir = new File(unpackedRootDir, contentItem.getHash());
 		unpackedDir.mkdirs();
-		writeString(new File(unpackedDir, "content-type.txt"), contentItem.getType());
+		//writeString(new File(unpackedDir, "content-type.txt"), contentItem.getType());
 	}
 
 	/**
@@ -35,13 +33,13 @@ public class UnpackedDir {
 		this.unpackedDir = new File(unpackedPath);
 	}
 
-	public String getContentType() {
+	/*public String getContentType() {
 		if (contentType == null) {
 			return (contentType = readString(new File(unpackedDir, "content-type.info")));
 		} else {
 			return contentType;
 		}
-	}
+	}*/
 
 	public File getUnpackedDir() {
 		return unpackedDir;
@@ -52,9 +50,9 @@ public class UnpackedDir {
 		return new File(unpackedDir, "unpacked.info").exists();
 	}
 
-	public boolean isGarbage() {
+	/*public boolean isGarbage() {
 		return new File(unpackedDir, "garbage.info").exists();
-	}
+	}*/
 
 	public void markUnpacked() {
 		try {
@@ -88,10 +86,10 @@ public class UnpackedDir {
 		}
 	}
 
-	public void markGarbage() {
+	/*public void markGarbage() {
 		try {
 			new File(unpackedDir, "garbage.info").createNewFile();
 		} catch (IOException ignored) {
 		}
-	}
+	}*/
 }

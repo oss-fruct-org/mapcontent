@@ -9,7 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 
 import org.fruct.oss.mapcontent.R;
-import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -69,9 +69,9 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 			ContentListSubItem sItem = storageItems.get(i);
 
 			String type = sItem.contentItem.getType();
-			if (type.equals(RemoteContentService.MAPSFORGE_MAP))
+			if (type.equals(ContentManagerImpl.MAPSFORGE_MAP))
 				strings[i] = getString(R.string.offline_map);
-			else if (type.equals(RemoteContentService.GRAPHHOPPER_MAP))
+			else if (type.equals(ContentManagerImpl.GRAPHHOPPER_MAP))
 				strings[i] = getString(R.string.navigation_data);
 
 			active[i] = (sItem.state == ContentFragment.LocalContentState.NEEDS_UPDATE

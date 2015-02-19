@@ -23,7 +23,6 @@ import android.widget.Toast;
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentService;
-import org.fruct.oss.mapcontent.content.RemoteContentService;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.slf4j.Logger;

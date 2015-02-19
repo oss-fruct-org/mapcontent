@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
-import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 
 import java.util.List;
 
@@ -106,9 +106,9 @@ class ContentAdapter extends BaseAdapter {
 				tag.item2 = sItem;
 
 			String text = "";
-			if (sItem.getType().equals(RemoteContentService.GRAPHHOPPER_MAP)) {
+			if (sItem.getType().equals(ContentManagerImpl.GRAPHHOPPER_MAP)) {
 				text = context.getString(R.string.navigation_data);
-			} else if (sItem.getType().equals(RemoteContentService.MAPSFORGE_MAP)) {
+			} else if (sItem.getType().equals(ContentManagerImpl.MAPSFORGE_MAP)) {
 				text = context.getString(R.string.offline_map);
 			}
 

@@ -1,4 +1,4 @@
-package org.fruct.oss.mapcontent.content.contenttype2;
+package org.fruct.oss.mapcontent.content.contenttype;
 
 import android.location.Location;
 
@@ -6,7 +6,6 @@ import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
-import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.utils.Region;
 import org.fruct.oss.mapcontent.content.utils.Utils;
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
