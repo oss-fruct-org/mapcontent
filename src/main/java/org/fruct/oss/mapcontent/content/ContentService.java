@@ -129,6 +129,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	public void addListener(Listener listener) {
 		listeners.add(listener);
+		previousLocation = null;
 	}
 
 	public void interrupt() {
