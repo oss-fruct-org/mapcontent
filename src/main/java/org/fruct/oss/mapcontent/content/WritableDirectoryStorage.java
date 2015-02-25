@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
+import java.util.List;
 
 public class WritableDirectoryStorage extends DirectoryStorage {
 	private static final Logger log = LoggerFactory.getLogger(WritableDirectoryStorage.class);
@@ -20,13 +22,6 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 		if (!file.mkdirs() && !file.isDirectory()) {
 			log.warn("Can't mkdirs new path");
 		}
-	}
-
-	public void deleteContentItem(ContentItem contentItem) {
-		DirectoryContentItem directoryContentItem = (DirectoryContentItem) contentItem;
-		File file = new File(directoryContentItem.getPath());
-		file.delete();
-		items.remove(contentItem);
 	}
 
 	public ContentItem storeContentItem(ContentItem remoteContentItem, InputStream input) throws IOException {
@@ -80,8 +75,33 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 		}
 	}
 
+	public void markObsolete(ContentItem contentItem) throws IOException {
+		digestCache.delete(contentItem.getName());
+		for (Iterator<ContentItem> iterator = items.iterator(); iterator.hasNext(); ) {
+			ContentItem localItem = iterator.next();
+
+			if (localItem.getName().equals(contentItem.getName())) {
+				iterator.remove();
+				String itemPath = ((DirectoryContentItem) localItem).getPath();
+				File obsoletedItemPath = new File(itemPath + ".obsolete");
+				obsoletedItemPath.createNewFile();
+			}
+		}
+	}
+
+	public void deleteObsoleteItems(List<File> protectedFiles) {
+		File rootDir = new File(path);
+
+		for (File existingFile : rootDir.listFiles()) {
+			File obsoleteFile = new File(existingFile.getPath() + ".obsolete");
+			if (obsoleteFile.exists() && !protectedFiles.contains(existingFile)) {
+				obsoleteFile.delete();
+				existingFile.delete();
+			}
+		}
+	}
+
 	public String getStorageName() {
 		return "writable-directory-storage";
 	}
-
 }

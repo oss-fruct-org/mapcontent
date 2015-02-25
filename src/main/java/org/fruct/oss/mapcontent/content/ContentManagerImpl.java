@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -195,15 +194,10 @@ public class ContentManagerImpl implements ContentManager {
 				log.warn("Unsupported hash algorithm");
 			}
 
-			// Old directory now garbage, delete it from content list
-			/*ContentItem deletedItem = deleteFromLocalList(remoteItem);
-			if (deletedItem != null) {
-				garbageItem(deletedItem);
-			}*/
-
-			ContentItem newContentItem = mainLocalStorage.storeContentItem(remoteItem, inputStream);
-			localContentItems.add(newContentItem);
-			return newContentItem;
+			mainLocalStorage.markObsolete(remoteItem);
+			ContentItem contentItem = mainLocalStorage.storeContentItem(remoteItem, inputStream);
+			refreshLocalItemsList();
+			return contentItem;
 		} finally {
 			Utils.silentClose(conn);
 		}
@@ -252,6 +246,7 @@ public class ContentManagerImpl implements ContentManager {
 			deleteDir(rootFile, SAFEGUARD_STRING);
 		}
 
+		// Delete unpacked files that are not active
 		File unpackedRoot = new File(contentRootPath, "/content-manager/unpacked");
 		for (File unpackedDir : unpackedRoot.listFiles()) {
 			if (!activeUnpackedFiles.contains(unpackedDir)) {
@@ -259,33 +254,7 @@ public class ContentManagerImpl implements ContentManager {
 			}
 		}
 
-
-		/*List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
-
-		// Delete inactive unpacked directories
-		List<String> allRoots = new ArrayList<String>(migrationHistory);
-		allRoots.add(contentRootPath);
-
-		for (String contentRoot : allRoots) {
-			File unpackedRoot = new File(contentRoot, "/content-manager/unpacked");
-			for (File unpackedDirFile : unpackedRoot.listFiles()) {
-				//UnpackedDir unpackedDir = new UnpackedDir(unpackedDirFile.getPath());
-				if (!activeUnpackedPaths.contains(unpackedDirFile.getAbsolutePath())) {
-					deleteDir(unpackedDirFile, SAFEGUARD_STRING);
-				}
-			}
-		}
-
-		// Delete historical packages that are not unpacked
-		for (String contentRoot : migrationHistory) {
-			File storageRoot = new File(contentRoot, "/content-manager/storage");
-			UnpackedDir unpackedDir = new UnpackedDir(unpackedDirFile.getPath());
-
-			//DirectoryStorage
-		}
-
-		hashCode();*/
-
+		mainLocalStorage.deleteObsoleteItems(activePackageFiles);
 	}
 
 	@Override
@@ -307,6 +276,17 @@ public class ContentManagerImpl implements ContentManager {
 		}
 	}
 
+	@Override
+	public boolean deleteContentItem(ContentItem contentItem) {
+		try {
+			mainLocalStorage.markObsolete(contentItem);
+			refreshLocalItemsList();
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+	}
+
 	private void addMigrationHistoryItem() {
 		List<String> migrationHistory = Utils.deserializeStringList(
 				pref.getString("pref-migration-history", null));
@@ -315,14 +295,6 @@ public class ContentManagerImpl implements ContentManager {
 				.putString("pref-migration-history", Utils.serializeStringList(migrationHistory))
 				.apply();
 	}
-
-	/*private void garbageItem(ContentItem contentItem) {
-		UnpackedDir unpackedDir = new UnpackedDir(new File(contentRootPath), contentItem);
-		if (unpackedDir.isUnpacked()) {
-			unpackedDir.markGarbage();
-		}
-		digestCache.delete(contentItem.getName());
-	}*/
 
 	private void refreshLocalItemsList() {
 		try {
@@ -411,19 +383,6 @@ public class ContentManagerImpl implements ContentManager {
 		} else {
 			return false;
 		}
-	}
-
-	private ContentItem deleteFromLocalList(ContentItem contentItem) {
-		for (Iterator<ContentItem> iterator = localContentItems.iterator(); iterator.hasNext(); ) {
-			ContentItem localItem = iterator.next();
-
-			if (localItem.getName().equals(contentItem.getName())) {
-				iterator.remove();
-				return localItem;
-			}
-		}
-
-		return null;
 	}
 
 	private boolean isParent(File parent, File child) {

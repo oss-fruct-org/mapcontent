@@ -71,6 +71,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
 				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
 				contentManager = new ContentManagerImpl(ContentService.this, dataPath, digestCache, contentTypes);
+				contentManager.garbageCollect();
+
 				((ContentManagerImpl) contentManager).setListener(ContentService.this);
 				notifyInitialized();
 			}
@@ -133,11 +135,12 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	}
 
 	public void interrupt() {
-
+		// TODO: implement
 	}
 
 	public boolean deleteContentItem(ContentItem contentItem) {
-		return false;
+		// TODO: deactivate deleted content item
+		return contentManager.deleteContentItem(contentItem);
 	}
 
 	public void downloadItem(final ContentItem contentItem) {
@@ -168,6 +171,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 					notifyDownloadInterrupted(contentItem);
 				} catch (IOException e) {
 					notifyErrorDownload(contentItem, e);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				} finally {
 					stopForeground(true);
 				}
@@ -195,6 +200,10 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	}
 
 	public void setLocation(final Location location) {
+		if (location == null) {
+			return;
+		}
+
 		if (previousLocation == null || location.distanceTo(previousLocation) > 10000) {
 			previousLocation = location;
 			executor.execute(new Runnable() {

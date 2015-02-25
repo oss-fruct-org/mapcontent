@@ -58,6 +58,13 @@ public interface ContentManager {
 	 */
 	void migrate(String newRootPath);
 
+	/**
+	 * Delete local content item
+	 *
+	 * @param contentItem content item
+	 */
+	boolean deleteContentItem(ContentItem contentItem);
+
 	public interface Listener {
 		void downloadStateUpdated(ContentItem item, int downloaded, int max);
 	}

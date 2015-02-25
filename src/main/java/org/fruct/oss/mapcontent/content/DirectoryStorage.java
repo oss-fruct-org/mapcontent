@@ -58,6 +58,11 @@ public class DirectoryStorage implements ContentStorage {
 	private ContentItem createContentItem(File file) throws IOException {
 		DirectoryContentItem item = null;
 
+		File obsoleteFile = new File(file.getPath() + ".obsolete");
+		if (obsoleteFile.exists()) {
+			return null;
+		}
+
 		if (file.getName().endsWith(".map")) {
 			item = createBaseContentItem(file);
 			item.setType("mapsforge-map");
