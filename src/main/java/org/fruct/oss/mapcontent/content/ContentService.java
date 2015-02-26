@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
@@ -150,17 +151,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 			@Override
 			public void run() {
 				try {
-					Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-					PendingIntent contentIntent = PendingIntent.getActivity(ContentService.this, 0,
-							launchIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-
-					NotificationCompat.Builder builder = new NotificationCompat.Builder(ContentService.this);
-					builder.setSmallIcon(R.drawable.ic_launcher)
-							.setContentTitle("Social navigator")
-							.setContentText("Downloading " + remoteItem.getName())
-							.setContentIntent(contentIntent);
-
-					startForeground(1, builder.build());
+					startForeground(0, 1, R.drawable.ic_stat_file_file_download,
+							"Downloading " + remoteItem.getName());
 					ContentItem localContentItem = contentManager.downloadContentItem(remoteItem);
 					notifyDownloadFinished(contentItem, localContentItem);
 					notifyLocalListReady(getLocalContentItems());
@@ -217,6 +209,21 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	public String requestContentItem(ContentItem contentItem) {
 		return contentManager.activateContentItem(contentItem);
+	}
+
+	private void startForeground(int pendingIntentRequestCode, int notificationCode,
+								 @DrawableRes int icon, String contentText) {
+		Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+		PendingIntent contentIntent = PendingIntent.getActivity(ContentService.this, pendingIntentRequestCode,
+				launchIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(ContentService.this);
+		builder.setSmallIcon(icon)
+				.setContentTitle("Social navigator")
+				.setContentText(contentText)
+				.setContentIntent(contentIntent);
+
+		startForeground(notificationCode, builder.build());
 	}
 
 	private void checkRegion(Location location) {
@@ -366,8 +373,14 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				executor.execute(new Runnable() {
 					@Override
 					public void run() {
-						contentManager.migrate(newPath);
-						notifyRequestContentReload();
+						try {
+							startForeground(1, 2, R.drawable.ic_stat_content_content_copy,
+									"Moving content to " + newPath);
+							contentManager.migrate(newPath);
+							notifyRequestContentReload();
+						} finally {
+							stopForeground(true);
+						}
 					}
 				});
 			}
