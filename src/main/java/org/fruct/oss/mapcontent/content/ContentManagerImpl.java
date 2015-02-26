@@ -155,8 +155,8 @@ public class ContentManagerImpl implements ContentManager {
 
 		if (unpackedDir.isUnpacked()) {
 			pref.edit()
-					.putString("pref-" + contentItem.getType() + "-active-package", contentItemPackageFile)
-					.putString("pref-" + contentItem.getType() + "-active-unpacked",
+					.putString(getActivePackagePrefKey(contentItem.getType()), contentItemPackageFile)
+					.putString(getActiveUnpackedPrefKey(contentItem.getType()),
 							unpackedDir.getUnpackedDir().toString())
 					.apply();
 			return unpackedDir.getUnpackedDir().toString();
@@ -209,16 +209,23 @@ public class ContentManagerImpl implements ContentManager {
 		List<File> activeUnpackedFiles = new ArrayList<File>();
 
 		for (ContentType contentType : contentTypes.values()) {
-			String activePackagePath = pref.getString("pref-" + contentType.getName() + "-active-package",
-					null);
-			String activeUnpackedPath = pref.getString("pref-" + contentType.getName() + "-active-unpacked",
-					null);
+			String activeUnpackedPath = getActiveUnpacked(contentType.getName());
+			String activePackagePath = getActivePackage(contentType.getName());
 
+			File activePackageFileObsolete = new File(activePackagePath + ".obsolete");
 			File activePackageFile = new File(activePackagePath);
 			File activeUnpackedFile = new File(activeUnpackedPath);
 
-			activePackageFiles.add(activePackageFile);
-			activeUnpackedFiles.add(activeUnpackedFile);
+			if (activePackageFileObsolete.exists()) {
+				deleteDir(activeUnpackedFile, SAFEGUARD_STRING);
+				pref.edit()
+						.remove(getActiveUnpackedPrefKey(contentType.getName()))
+						.remove(getActivePackagePrefKey(contentType.getName()))
+						.apply();
+			} else {
+				activePackageFiles.add(activePackageFile);
+				activeUnpackedFiles.add(activeUnpackedFile);
+			}
 		}
 
 		List<String> migrationHistory = Utils.deserializeStringList(pref.getString("pref-migration-history", null));
@@ -285,6 +292,22 @@ public class ContentManagerImpl implements ContentManager {
 			return false;
 		}
 		return true;
+	}
+
+	private String getActivePackage(String contentType) {
+		return pref.getString(getActivePackagePrefKey(contentType), null);
+	}
+
+	private String getActiveUnpacked(String contentType) {
+		return pref.getString(getActiveUnpackedPrefKey(contentType), null);
+	}
+
+	private String getActivePackagePrefKey(String contentType) {
+		return "pref-" + contentType + "-active-package";
+	}
+
+	private String getActiveUnpackedPrefKey(String contentType) {
+		return "pref-" + contentType + "-active-unpacked";
 	}
 
 	private void addMigrationHistoryItem() {
