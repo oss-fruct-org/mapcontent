@@ -274,7 +274,7 @@ public class ContentManagerImpl implements ContentManager {
 			mainLocalStorage.migrate(newRootPath + "/content-manager/storage");
 
 			// Update migration history
-			addMigrationHistoryItem();
+			addMigrationHistoryItem(contentRootPath, newRootPath);
 
 			contentRootPath = newRootPath;
 		} catch (IOException e) {
@@ -310,10 +310,11 @@ public class ContentManagerImpl implements ContentManager {
 		return "pref-" + contentType + "-active-unpacked";
 	}
 
-	private void addMigrationHistoryItem() {
+	private void addMigrationHistoryItem(String oldPath, String newPath) {
 		List<String> migrationHistory = Utils.deserializeStringList(
 				pref.getString("pref-migration-history", null));
-		migrationHistory.add(contentRootPath);
+		migrationHistory.add(oldPath);
+		migrationHistory.remove(newPath);
 		pref.edit()
 				.putString("pref-migration-history", Utils.serializeStringList(migrationHistory))
 				.apply();
