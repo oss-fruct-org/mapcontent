@@ -72,8 +72,11 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
 				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
 				contentManager = new ContentManagerImpl(ContentService.this, dataPath, digestCache, contentTypes);
-				contentManager.garbageCollect();
-
+				try {
+					contentManager.garbageCollect();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 				((ContentManagerImpl) contentManager).setListener(ContentService.this);
 				notifyInitialized();
 			}

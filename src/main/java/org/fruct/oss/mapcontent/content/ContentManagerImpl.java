@@ -212,19 +212,23 @@ public class ContentManagerImpl implements ContentManager {
 			String activeUnpackedPath = getActiveUnpacked(contentType.getName());
 			String activePackagePath = getActivePackage(contentType.getName());
 
-			File activePackageFileObsolete = new File(activePackagePath + ".obsolete");
-			File activePackageFile = new File(activePackagePath);
-			File activeUnpackedFile = new File(activeUnpackedPath);
+			if (activeUnpackedPath != null) {
+				assert activePackagePath != null;
 
-			if (activePackageFileObsolete.exists()) {
-				deleteDir(activeUnpackedFile, SAFEGUARD_STRING);
-				pref.edit()
-						.remove(getActiveUnpackedPrefKey(contentType.getName()))
-						.remove(getActivePackagePrefKey(contentType.getName()))
-						.apply();
-			} else {
-				activePackageFiles.add(activePackageFile);
-				activeUnpackedFiles.add(activeUnpackedFile);
+				File activePackageFileObsolete = new File(activePackagePath + ".obsolete");
+				File activePackageFile = new File(activePackagePath);
+				File activeUnpackedFile = new File(activeUnpackedPath);
+
+				if (activePackageFileObsolete.exists()) {
+					deleteDir(activeUnpackedFile, SAFEGUARD_STRING);
+					pref.edit()
+							.remove(getActiveUnpackedPrefKey(contentType.getName()))
+							.remove(getActivePackagePrefKey(contentType.getName()))
+							.apply();
+				} else {
+					activePackageFiles.add(activePackageFile);
+					activeUnpackedFiles.add(activeUnpackedFile);
+				}
 			}
 		}
 
@@ -255,9 +259,12 @@ public class ContentManagerImpl implements ContentManager {
 
 		// Delete unpacked files that are not active
 		File unpackedRoot = new File(contentRootPath, "/content-manager/unpacked");
-		for (File unpackedDir : unpackedRoot.listFiles()) {
-			if (!activeUnpackedFiles.contains(unpackedDir)) {
-				deleteDir(unpackedDir, SAFEGUARD_STRING);
+
+		if (unpackedRoot.exists() && unpackedRoot.isDirectory()) {
+			for (File unpackedDir : unpackedRoot.listFiles()) {
+				if (!activeUnpackedFiles.contains(unpackedDir)) {
+					deleteDir(unpackedDir, SAFEGUARD_STRING);
+				}
 			}
 		}
 
