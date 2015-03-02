@@ -212,11 +212,12 @@ public class ContentManagerImpl implements ContentManager {
 			String activeUnpackedPath = getActiveUnpacked(contentType.getName());
 			String activePackagePath = getActivePackage(contentType.getName());
 
-			if (activeUnpackedPath != null && activePackagePath != null) {
-				File activeUnpackedFile = new File(activeUnpackedPath);
+			if (activeUnpackedPath != null) {
+				assert activePackagePath != null;
 
 				File activePackageFileObsolete = new File(activePackagePath + ".obsolete");
 				File activePackageFile = new File(activePackagePath);
+				File activeUnpackedFile = new File(activeUnpackedPath);
 
 				if (activePackageFileObsolete.exists()) {
 					deleteDir(activeUnpackedFile, SAFEGUARD_STRING);
@@ -258,7 +259,7 @@ public class ContentManagerImpl implements ContentManager {
 
 		// Delete unpacked files that are not active
 		File unpackedRoot = new File(contentRootPath, "/content-manager/unpacked");
-		if (unpackedRoot.exists()) {
+		if (unpackedRoot.exists() && unpackedRoot.isDirectory()) {
 			for (File unpackedDir : unpackedRoot.listFiles()) {
 				if (!activeUnpackedFiles.contains(unpackedDir)) {
 					deleteDir(unpackedDir, SAFEGUARD_STRING);
