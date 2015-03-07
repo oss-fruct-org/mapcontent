@@ -139,7 +139,12 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	}
 
 	public void interrupt() {
-		// TODO: implement
+		synchronized (downloadTasks) {
+			for (Future<?> task : downloadTasks) {
+				task.cancel(true);
+			}
+			downloadTasks.clear();
+		}
 	}
 
 	public boolean deleteContentItem(ContentItem contentItem) {
@@ -185,13 +190,18 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		}
 	}
 
-	public void refresh() {
-		synchronized (downloadTasks) {
-			for (Future<?> task : downloadTasks) {
-				task.cancel(true);
+	public void refresh(final String[] rootUrls) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					contentManager.refreshRemoteContentList(rootUrls);
+					notifyRemoteListReady(contentManager.getRemoteContentItems());
+				} catch (IOException e) {
+					notifyErrorInitializing(e);
+				}
 			}
-			downloadTasks.clear();
-		}
+		});
 	}
 
 	public void setLocation(final Location location) {

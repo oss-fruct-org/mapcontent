@@ -7,6 +7,13 @@ import java.util.List;
 
 public interface ContentManager {
 	/**
+	 * Refresh remote content list with given root urls
+	 * @param rootUrls
+	 */
+	void refreshRemoteContentList(String[] rootUrls) throws IOException;
+
+
+	/**
 	 * Returns all local content items that ready for use
 	 * @return local content items
 	 */

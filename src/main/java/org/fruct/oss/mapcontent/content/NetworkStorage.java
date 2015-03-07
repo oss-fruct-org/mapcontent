@@ -30,7 +30,7 @@ public class NetworkStorage implements ContentStorage {
 		for (String contentUrl : rootUrls) {
 			try {
 				items = getContentList(new String[] {contentUrl}, new HashSet<String>());
-				log.warn("Content root url {} successfully downloaded", contentUrl);
+				log.info("Content root url {} successfully downloaded", contentUrl);
 
 				break;
 			} catch (IOException ex) {

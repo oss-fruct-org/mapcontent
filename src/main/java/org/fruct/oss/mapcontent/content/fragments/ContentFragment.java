@@ -67,6 +67,8 @@ public class ContentFragment extends Fragment
 
 	private DownloadProgressFragment downloadFragment;
 
+	private String[] rootUrls = {"http://oss.fruct.org/projects/roadsigns/root.xml"};
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
@@ -155,7 +157,7 @@ public class ContentFragment extends Fragment
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.action_refresh) {
 			if (remoteContent != null) {
-				remoteContent.refresh();
+				remoteContent.refresh(rootUrls);
 			}
 		}
 
@@ -368,13 +370,18 @@ public class ContentFragment extends Fragment
 		remoteContent = contentService;
 		remoteContent.addListener(this);
 
-		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalContentItems()),
-				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteContentItems()));
+		remoteContent.refresh(rootUrls);
+
+		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalContentItems()), Collections.<ContentItem>emptyList());
 	}
 
 	@Override
 	public void onContentServiceDisconnected() {
 		remoteContent = null;
+	}
+
+	public void setRootUrls(String[] rootUrls) {
+		this.rootUrls = rootUrls;
 	}
 
 	private class GenerateContentList extends AsyncTask<Void, Void, List<ContentListItem>> {

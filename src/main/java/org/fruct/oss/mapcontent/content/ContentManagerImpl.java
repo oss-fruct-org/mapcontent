@@ -30,10 +30,6 @@ import java.util.zip.GZIPInputStream;
 public class ContentManagerImpl implements ContentManager {
 	private static final Logger log = LoggerFactory.getLogger(ContentManagerImpl.class);
 
-	public static final String[] REMOTE_CONTENT_URLS = {
-			"http://oss.fruct.org/projects/roadsigns/root.xml"};
-
-
 	public static final String GRAPHHOPPER_MAP = "graphhopper-map";
 	public static final String MAPSFORGE_MAP = "mapsforge-map";
 	public static final String SAFEGUARD_STRING = "content-manager";
@@ -43,13 +39,13 @@ public class ContentManagerImpl implements ContentManager {
 
 	private final SharedPreferences pref;
 
-	private final NetworkStorage networkStorage;
-
 	private final WritableDirectoryStorage mainLocalStorage;
 	private final List<ContentStorage> localStorages = new ArrayList<ContentStorage>();
 	private final HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
 
 	private final Map<String, Region> regions = new HashMap<String, Region>();
+
+	private NetworkStorage networkStorage;
 
 	private List<ContentItem> localContentItems;
 	private List<ContentItem> remoteContentItems;
@@ -58,16 +54,11 @@ public class ContentManagerImpl implements ContentManager {
 
 	public ContentManagerImpl(Context context, String contentRootPath, KeyValue digestCache,
 							  HashMap<String, ContentType> contentTypes) {
-		if (true) {
-			REMOTE_CONTENT_URLS[0] = "http://kappa.cs.petrsu.ru/~ivashov/mordor.xml";
-		}
-
 		this.contentRootPath = contentRootPath;
 		this.digestCache = digestCache;
 
 		pref = PreferenceManager.getDefaultSharedPreferences(context);
 
-		networkStorage = new NetworkStorage(REMOTE_CONTENT_URLS);
 		mainLocalStorage = new WritableDirectoryStorage(digestCache, contentRootPath + "/content-manager/storage");
 
 		String[] additionalStoragePaths = DirUtil.getExternalDirs(context);
@@ -79,11 +70,20 @@ public class ContentManagerImpl implements ContentManager {
 		this.contentTypes.putAll(contentTypes);
 
 		refreshLocalItemsList();
-		refreshRemoteItemsList();
 	}
 
 	public void setListener(Listener listener) {
 		this.listener = listener;
+	}
+
+	@Override
+	public void refreshRemoteContentList(String[] rootUrls) throws IOException {
+		networkStorage = new NetworkStorage(rootUrls);
+
+		networkStorage.updateContentList();
+		List<ContentItem> remoteItems = new ArrayList<ContentItem>();
+		remoteItems.addAll(networkStorage.getContentList());
+		remoteContentItems = remoteItems;
 	}
 
 	@Override
@@ -167,6 +167,10 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public synchronized ContentItem downloadContentItem(final NetworkContentItem remoteItem) throws IOException {
+		if (networkStorage == null) {
+			throw new IllegalStateException("Network storage haven't been initialized");
+		}
+
 		InputStream conn = null;
 		try {
 			conn = networkStorage.loadContentItem(remoteItem.getUrl());
@@ -345,19 +349,6 @@ public class ContentManagerImpl implements ContentManager {
 			localContentItems = localItems;
 		} catch (IOException e) {
 			// TODO: error
-		}
-	}
-
-	private void refreshRemoteItemsList() {
-		try {
-			networkStorage.updateContentList();
-			List<ContentItem> remoteItems = new ArrayList<ContentItem>();
-			remoteItems.addAll(networkStorage.getContentList());
-			remoteContentItems = remoteItems;
-		} catch (IOException e) {
-			//notifyErrorInitializing(e);
-		} finally {
-			//notifyRemoteListReady(remoteItems);
 		}
 	}
 
