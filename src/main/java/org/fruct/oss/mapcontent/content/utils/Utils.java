@@ -13,6 +13,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipFile;
 
 public class Utils {
 	@NonNull
@@ -55,6 +56,18 @@ public class Utils {
 		try {
 			if (closeable != null) {
 				closeable.close();
+			}
+		} catch (IOException ignored) {
+		}
+	}
+
+	/**
+	 * Workaround for "java.lang.IncompatibleClassChangeError: interface not implemented" in Samsung Galaxy S4
+	 */
+	public static void silentClose(@Nullable ZipFile zipFile) {
+		try {
+			if (zipFile != null) {
+				zipFile.close();
 			}
 		} catch (IOException ignored) {
 		}
