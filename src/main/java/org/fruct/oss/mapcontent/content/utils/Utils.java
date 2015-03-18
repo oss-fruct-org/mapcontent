@@ -13,6 +13,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipFile;
 
 public class Utils {
 	@NonNull
@@ -59,4 +60,14 @@ public class Utils {
 		} catch (IOException ignored) {
 		}
 	}
+
+	public static void silentClose(@Nullable ZipFile closeable) {
+		try {
+			if (closeable != null) {
+				closeable.close();
+			}
+		} catch (IOException ignored) {
+		}
+	}
+
 }
