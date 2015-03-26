@@ -81,8 +81,15 @@ public class ContentManagerImpl implements ContentManager {
 		networkStorage = new NetworkStorage(rootUrls);
 
 		networkStorage.updateContentList();
-		List<ContentItem> remoteItems = new ArrayList<ContentItem>();
-		remoteItems.addAll(networkStorage.getContentList());
+		List<ContentItem> remoteItems = new ArrayList<>();
+		List<ContentItem> loadedItems = networkStorage.getContentList();
+
+		for (ContentItem loadedItem : loadedItems) {
+			if (contentTypes.containsKey(loadedItem.getType())) {
+				remoteItems.add(loadedItem);
+			}
+		}
+
 		remoteContentItems = remoteItems;
 	}
 

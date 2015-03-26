@@ -71,6 +71,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 			public void run() {
 				HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
 				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
+				contentTypes.put(ContentManagerImpl.MAPSFORGE_MAP, new GraphhopperContentType());
 				contentManager = new ContentManagerImpl(ContentService.this, dataPath, digestCache, contentTypes);
 				try {
 					contentManager.garbageCollect();
@@ -222,6 +223,15 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	public String requestContentItem(ContentItem contentItem) {
 		return contentManager.activateContentItem(contentItem);
+	}
+
+	public String requestContentItemSource(ContentItem contentItem) {
+		String unpacked = contentManager.activateContentItem(contentItem);
+		if (unpacked != null) {
+			return ((DirectoryContentItem) contentItem).getPath();
+		} else {
+			return null;
+		}
 	}
 
 	private void startForeground(int pendingIntentRequestCode, int notificationCode,
