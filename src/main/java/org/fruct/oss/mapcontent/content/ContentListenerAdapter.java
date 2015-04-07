@@ -49,4 +49,9 @@ public class ContentListenerAdapter implements ContentService.Listener {
 	public void requestContentReload() {
 
 	}
+
+	@Override
+	public void recommendedRegionItemNotFound(String contentType) {
+
+	}
 }

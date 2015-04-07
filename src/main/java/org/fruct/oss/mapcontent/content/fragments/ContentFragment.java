@@ -244,6 +244,11 @@ public class ContentFragment extends Fragment
 	}
 
 	@Override
+	public void recommendedRegionItemNotFound(String contentType) {
+
+	}
+
+	@Override
 	public void downloadsSelected(List<ContentListSubItem> items) {
 		if (currentItem == null)
 			return;

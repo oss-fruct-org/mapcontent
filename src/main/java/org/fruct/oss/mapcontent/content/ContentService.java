@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,7 +44,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	private String dataPath;
 	private List<ContentServiceConnection> initializationListeners = new ArrayList<ContentServiceConnection>();
-	private final List<Listener> listeners = new ArrayList<Listener>();
+	private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
 	private Location previousLocation;
 
@@ -260,6 +261,21 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				notifyRecommendedRegionItemReady(contentItem);
 			}
 		}
+
+		for (String contentType : contentTypes) {
+			notifyRecommendedRegionItemNotFound(contentType);
+		}
+	}
+
+	private void notifyRecommendedRegionItemNotFound(final String contentType) {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				for (Listener listener : listeners) {
+					listener.recommendedRegionItemNotFound(contentType);
+				}
+			}
+		});
 	}
 
 	private void notifyLocalListReady(final List<ContentItem> items) {
@@ -277,10 +293,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.remoteListReady(items);
-					}
+				for (Listener listener : listeners) {
+					listener.remoteListReady(items);
 				}
 			}
 		});
@@ -290,11 +304,9 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
 
-					for (Listener listener : listeners) {
-						listener.downloadStateUpdated(item, downloaded, max);
-					}
+				for (Listener listener : listeners) {
+					listener.downloadStateUpdated(item, downloaded, max);
 				}
 			}
 		});
@@ -304,10 +316,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.downloadFinished(localItem, remoteItem);
-					}
+				for (Listener listener : listeners) {
+					listener.downloadFinished(localItem, remoteItem);
 				}
 			}
 		});
@@ -317,10 +327,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.downloadInterrupted(remoteItem);
-					}
+				for (Listener listener : listeners) {
+					listener.downloadInterrupted(remoteItem);
 				}
 			}
 		});
@@ -330,11 +338,9 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
 
-					for (Listener listener : listeners) {
-						listener.errorDownloading(remoteItem, ex);
-					}
+				for (Listener listener : listeners) {
+					listener.errorDownloading(remoteItem, ex);
 				}
 			}
 		});
@@ -344,10 +350,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.errorInitializing(ex);
-					}
+				for (Listener listener : listeners) {
+					listener.errorInitializing(ex);
 				}
 			}
 		});
@@ -357,10 +361,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.recommendedRegionItemReady(localItem);
-					}
+				for (Listener listener : listeners) {
+					listener.recommendedRegionItemReady(localItem);
 				}
 			}
 		});
@@ -370,10 +372,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (listeners) {
-					for (Listener listener : listeners) {
-						listener.requestContentReload();
-					}
+				for (Listener listener : listeners) {
+					listener.requestContentReload();
 				}
 			}
 		});
@@ -421,7 +421,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		}
 	}
 
-	public static interface Listener {
+	public interface Listener {
 		void localListReady(List<ContentItem> list);
 		void remoteListReady(List<ContentItem> list);
 
@@ -436,5 +436,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		void recommendedRegionItemReady(ContentItem contentItem);
 
 		void requestContentReload();
+
+		void recommendedRegionItemNotFound(String contentType);
 	}
 }
