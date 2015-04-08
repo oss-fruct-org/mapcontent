@@ -1,14 +1,13 @@
 package org.fruct.oss.mapcontent.content;
 
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.fruct.oss.mapcontent.content.utils.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,18 +17,25 @@ public class NetworkStorage implements ContentStorage {
 	private static final Logger log = LoggerFactory.getLogger(NetworkStorage.class);
 
 	private final String[] rootUrls;
-	private List<ContentItem> items;
+	private final RegionCache regionCache;
 
-	public NetworkStorage(String[] rootUrls) {
+	private List<ContentItem> items = new ArrayList<>();
+
+	public NetworkStorage(String[] rootUrls, RegionCache regionCache) {
 		this.rootUrls = rootUrls;
+		this.regionCache = regionCache;
 	}
 
 	@Override
 	public void updateContentList() throws IOException {
-		items = null;
+		boolean found = false;
+		items.clear();
+
 		for (String contentUrl : rootUrls) {
 			try {
-				items = getContentList(new String[] {contentUrl}, new HashSet<String>());
+				found = true;
+
+				loadContentList(new String[]{contentUrl}, new HashSet<String>());
 				log.info("Content root url {} successfully downloaded", contentUrl);
 
 				break;
@@ -38,14 +44,12 @@ public class NetworkStorage implements ContentStorage {
 			}
 		}
 
-		if (items == null) {
+		if (!found) {
 			throw new IOException("No one of remote content roots are available");
 		}
 	}
 
-	private List<ContentItem> getContentList(String[] contentUrls, Set<String> visited) throws IOException {
-		ArrayList<ContentItem> ret = new ArrayList<ContentItem>();
-
+	private void loadContentList(String[] contentUrls, Set<String> visited) throws IOException {
 		int countSuccessful = 0;
 		for (String url : contentUrls) {
 			if (visited.contains(url)) {
@@ -57,26 +61,26 @@ public class NetworkStorage implements ContentStorage {
 			InputStream conn = null;
 
 			try {
-				conn = loadContentItem(url);
+				conn = UrlUtil.getInputStream(url);
 
 				NetworkContent content = NetworkContent.parse(new InputStreamReader(conn));
 
 				for (NetworkContentItem item : content.getItems()) {
 					if (item.getType().equals(ContentManagerImpl.GRAPHHOPPER_MAP)) {
 						item.setNetworkStorage(this);
-						ret.add(item);
+						items.add(item);
 					}
 
 					if (item.getType().equals(ContentManagerImpl.MAPSFORGE_MAP)) {
 						item.setNetworkStorage(this);
-						ret.add(item);
+						items.add(item);
 					}
-
 				}
 
 				countSuccessful++;
 
-				ret.addAll(getContentList(content.getIncludes(), visited));
+				loadContentList(content.getIncludes(), visited);
+				regionCache.updateDiskCache(content.getCacheUrls());
 			} catch (IOException e) {
 				log.warn("Content link " + url + " broken: ", e);
 			} finally {
@@ -87,21 +91,6 @@ public class NetworkStorage implements ContentStorage {
 
 		if (countSuccessful == 0 && contentUrls.length > 0)
 			throw new IOException("No one of remote content roots are available");
-
-		return ret;
-	}
-
-	public InputStream loadContentItem(String urlStr) throws IOException {
-		final HttpURLConnection conn = UrlUtil.getConnection(urlStr);
-		final InputStream input = conn.getInputStream();
-
-		return new FilterInputStream(input) {
-			@Override
-			public void close() throws IOException {
-				super.close();
-				conn.disconnect();
-			}
-		};
 	}
 
 	@Override

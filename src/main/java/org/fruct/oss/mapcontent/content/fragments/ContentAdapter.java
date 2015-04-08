@@ -15,9 +15,6 @@ import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 
 import java.util.List;
 
-/**
- * Created by ivashov on 10.11.14.
- */
 class ContentAdapter extends BaseAdapter {
 	private List<ContentListItem> items;
 	private final Context context;

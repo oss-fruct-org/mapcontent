@@ -17,10 +17,14 @@ import static org.fruct.oss.mapcontent.content.utils.XmlUtil.skip;
 public class NetworkContent {
 	private String[] includes;
 	private NetworkContentItem[] items;
+	private String[] cacheUrls;
 
-	public NetworkContent(List<String> includeList, List<NetworkContentItem> networkContentItemList) {
+	public NetworkContent(List<String> includeList,
+						  List<NetworkContentItem> networkContentItemList,
+						  List<String> cacheUrls) {
 		this.includes = includeList.toArray(new String[includeList.size()]);
 		this.items = networkContentItemList.toArray(new NetworkContentItem[networkContentItemList.size()]);
+		this.cacheUrls = cacheUrls.toArray(new String[cacheUrls.size()]);
 	}
 
 	public String[] getIncludes() {
@@ -29,6 +33,10 @@ public class NetworkContent {
 
 	public NetworkContentItem[] getItems() {
 		return items;
+	}
+
+	public String[] getCacheUrls() {
+		return cacheUrls;
 	}
 
 	public static NetworkContent parse(InputStreamReader reader) {
@@ -47,8 +55,9 @@ public class NetworkContent {
 	}
 
 	private static NetworkContent readContent(XmlPullParser parser) throws IOException, XmlPullParserException {
-		ArrayList<NetworkContentItem> items = new ArrayList<NetworkContentItem>();
-		ArrayList<String> includes = new ArrayList<String>();
+		ArrayList<NetworkContentItem> items = new ArrayList<>();
+		ArrayList<String> includes = new ArrayList<>();
+		ArrayList<String> cacheUrls = new ArrayList<>();
 
 		parser.require(XmlPullParser.START_TAG, null, "content");
 		while (parser.next() != XmlPullParser.END_TAG) {
@@ -56,16 +65,23 @@ public class NetworkContent {
 				continue;
 
 			String name = parser.getName();
-			if (name.equals("file")) {
+			switch (name) {
+			case "file":
 				items.add(NetworkContentItem.readFile(parser));
-			} else if (name.equals("include")) {
+				break;
+			case "include":
 				includes.add(readText(parser));
-			} else {
+				break;
+			case "region-cache":
+				cacheUrls.add(readText(parser));
+				break;
+			default:
 				skip(parser);
+				break;
 			}
 		}
 		parser.require(XmlPullParser.END_TAG, null, "content");
 
-		return new NetworkContent(includes, items);
+		return new NetworkContent(includes, items, cacheUrls);
 	}
 }

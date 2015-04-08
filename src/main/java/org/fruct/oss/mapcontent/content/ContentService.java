@@ -17,7 +17,9 @@ import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.contenttype.*;
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	private Future<?> initializationFuture;
 	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
+	private boolean isSuggestItemRequested = false;
 
 	@Override
 	public void onCreate() {
@@ -70,10 +73,14 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		initializationFuture = executor.submit(new Runnable() {
 			@Override
 			public void run() {
-				HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
+				HashMap<String, ContentType> contentTypes = new HashMap<>();
 				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
 				contentTypes.put(ContentManagerImpl.MAPSFORGE_MAP, new GraphhopperContentType());
-				contentManager = new ContentManagerImpl(ContentService.this, dataPath, digestCache, contentTypes);
+				contentManager = new ContentManagerImpl(ContentService.this,
+						dataPath,
+						digestCache,
+						new RegionCache(new File(getCacheDir(), "region-cache")),
+						contentTypes);
 				try {
 					contentManager.garbageCollect();
 				} catch (Exception ex) {
@@ -137,7 +144,6 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 	public void addListener(Listener listener) {
 		listeners.add(listener);
-		previousLocation = null;
 	}
 
 	public void interrupt() {
@@ -217,6 +223,10 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				@Override
 				public void run() {
 					checkRegion(location);
+
+					if (isSuggestItemRequested) {
+						suggestItem();
+					}
 				}
 			});
 		}
@@ -225,6 +235,30 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	public String requestContentItem(ContentItem contentItem) {
 		return contentManager.activateContentItem(contentItem);
 	}
+
+	public void suggestItem() {
+		if (previousLocation == null) {
+			isSuggestItemRequested = true;
+			return;
+		}
+
+		isSuggestItemRequested = false;
+
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				Set<String> ret = new HashSet<>(2);
+
+				List<ContentItem> suggestedItems = contentManager.findSuggestedItems(previousLocation);
+				for (ContentItem suggestedItem : suggestedItems) {
+					ret.add(suggestedItem.getRegionId());
+				}
+
+				notifySuggestedItemsReady(new ArrayList<>(ret));
+			}
+		});
+	}
+
 
 	public String requestContentItemSource(ContentItem contentItem) {
 		String unpacked = contentManager.activateContentItem(contentItem);
@@ -251,7 +285,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	}
 
 	private void checkRegion(Location location) {
-		Set<String> contentTypes = new HashSet<String>(2);
+		Set<String> contentTypes = new HashSet<>(2);
 		contentTypes.add(ContentManagerImpl.GRAPHHOPPER_MAP);
 		contentTypes.add(ContentManagerImpl.MAPSFORGE_MAP);
 		List<ContentItem> regionContentItems = contentManager.findContentItemsByRegion(location);
@@ -379,6 +413,17 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		});
 	}
 
+	private void notifySuggestedItemsReady(final List<String> regionIds) {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				for (Listener listener : listeners) {
+					listener.suggestedItemsReady(regionIds);
+				}
+			}
+		});
+
+	}
 
 	public void test() {
 		Location location = new Location("test");
@@ -434,9 +479,11 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		void downloadInterrupted(ContentItem item);
 
 		void recommendedRegionItemReady(ContentItem contentItem);
+		void recommendedRegionItemNotFound(String contentType);
+
+		void suggestedItemsReady(List<String> regionIds);
 
 		void requestContentReload();
 
-		void recommendedRegionItemNotFound(String contentType);
 	}
 }

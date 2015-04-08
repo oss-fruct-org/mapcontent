@@ -10,7 +10,9 @@ import org.fruct.oss.mapcontent.content.utils.DigestInputStream;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.ProgressInputStream;
 import org.fruct.oss.mapcontent.content.utils.Region;
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.fruct.oss.mapcontent.content.utils.StrUtil;
+import org.fruct.oss.mapcontent.content.utils.UrlUtil;
 import org.fruct.oss.mapcontent.content.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class ContentManagerImpl implements ContentManager {
@@ -41,9 +44,8 @@ public class ContentManagerImpl implements ContentManager {
 
 	private final WritableDirectoryStorage mainLocalStorage;
 	private final List<ContentStorage> localStorages = new ArrayList<ContentStorage>();
-	private final HashMap<String, ContentType> contentTypes = new HashMap<String, ContentType>();
-
-	private final Map<String, Region> regions = new HashMap<String, Region>();
+	private final HashMap<String, ContentType> contentTypes = new HashMap<>();
+	private final RegionCache regionCache;
 
 	private NetworkStorage networkStorage;
 
@@ -52,10 +54,11 @@ public class ContentManagerImpl implements ContentManager {
 
 	private Listener listener;
 
-	public ContentManagerImpl(Context context, String contentRootPath, KeyValue digestCache,
+	public ContentManagerImpl(Context context, String contentRootPath, KeyValue digestCache, RegionCache regionCache,
 							  HashMap<String, ContentType> contentTypes) {
 		this.contentRootPath = contentRootPath;
 		this.digestCache = digestCache;
+		this.regionCache = regionCache;
 
 		pref = PreferenceManager.getDefaultSharedPreferences(context);
 
@@ -78,7 +81,7 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public void refreshRemoteContentList(String[] rootUrls) throws IOException {
-		networkStorage = new NetworkStorage(rootUrls);
+		networkStorage = new NetworkStorage(rootUrls, regionCache);
 
 		networkStorage.updateContentList();
 		List<ContentItem> remoteItems = new ArrayList<>();
@@ -105,13 +108,13 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public synchronized List<ContentItem> findContentItemsByRegion(Location location) {
-		List<ContentItem> matchingItems = new ArrayList<ContentItem>();
+		List<ContentItem> matchingItems = new ArrayList<>();
 
 		for (ContentItem contentItem : localContentItems) {
 			// TODO: this ContentType retrieving can be optimized
 			ContentType contentType = contentTypes.get(contentItem.getType());
 			String contentItemPackageFile = ((DirectoryContentItem) contentItem).getPath();
-			Region region = regions.get(contentItem.getRegionId());
+			Region region = regionCache.getRegion(contentItem.getRegionId());
 
 			// Try load region from content item package
 			if (region == null) {
@@ -125,7 +128,7 @@ public class ContentManagerImpl implements ContentManager {
 				}
 			} else {
 				// TODO: don't update this every time
-				regions.put(contentItem.getRegionId(), region);
+				regionCache.putRegion(contentItem.getRegionId(), region);
 				if (region.testHit(location.getLatitude(), location.getLongitude())) {
 					matchingItems.add(contentItem);
 				}
@@ -181,7 +184,7 @@ public class ContentManagerImpl implements ContentManager {
 
 		InputStream conn = null;
 		try {
-			conn = networkStorage.loadContentItem(remoteItem.getUrl());
+			conn = UrlUtil.getInputStream(remoteItem.getUrl());
 
 			InputStream inputStream = new ProgressInputStream(conn, remoteItem.getDownloadSize(),
 					100000, new ProgressInputStream.ProgressListener() {
@@ -217,8 +220,8 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public synchronized void garbageCollect() {
-		List<File> activePackageFiles = new ArrayList<File>();
-		List<File> activeUnpackedFiles = new ArrayList<File>();
+		List<File> activePackageFiles = new ArrayList<>();
+		List<File> activeUnpackedFiles = new ArrayList<>();
 
 		for (ContentType contentType : contentTypes.values()) {
 			String activeUnpackedPath = getActiveUnpacked(contentType.getName());
@@ -310,6 +313,20 @@ public class ContentManagerImpl implements ContentManager {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public List<ContentItem> findSuggestedItems(Location location) {
+		List<ContentItem> matchingItems = new ArrayList<>();
+
+		for (ContentItem remoteContentItem : remoteContentItems) {
+			Region region = regionCache.getRegion(remoteContentItem.getRegionId());
+			if (region.testHit(location.getLatitude(), location.getLongitude())) {
+				matchingItems.add(remoteContentItem);
+			}
+		}
+
+		return matchingItems;
 	}
 
 	private String getActivePackage(String contentType) {

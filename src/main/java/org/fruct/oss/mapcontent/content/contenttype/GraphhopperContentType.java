@@ -4,6 +4,7 @@ import android.location.Location;
 
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
+import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.Region;
 import org.fruct.oss.mapcontent.content.utils.Utils;
 import org.slf4j.Logger;
@@ -29,38 +30,7 @@ public class GraphhopperContentType implements ContentType {
 		log.info("Extracting graphhopper archive {}", unpackedPath);
 
 		File outDir = new File(unpackedPath);
-		ZipInputStream zipInputStream = null;
-		FileOutputStream fileOutputStream = null;
-		byte[] buffer = new byte[4096];
-		try {
-			zipInputStream = new ZipInputStream(new FileInputStream(contentItemPackageFile));
-			ZipEntry zipEntry;
-			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-				File file = new File(outDir, zipEntry.getName());
-				if (zipEntry.isDirectory()) {
-					file.mkdir();
-				} else {
-					fileOutputStream = new FileOutputStream(new File(outDir, zipEntry.getName()));
-
-					int readed;
-					while ((readed = zipInputStream.read(buffer)) > 0) {
-						fileOutputStream.write(buffer, 0, readed);
-					}
-
-					fileOutputStream.close();
-					fileOutputStream = null;
-				}
-			}
-
-			log.info("Graphhopper archive successfully extracted");
-		} catch (IOException e) {
-			log.error("Can't extract archive {}", contentItemPackageFile);
-			throw e;
-		} finally {
-			Utils.silentClose(zipInputStream);
-			Utils.silentClose(fileOutputStream);
-		}
-
+		DirUtil.unzip(new File(contentItemPackageFile), outDir);
 	}
 
 	@Override

@@ -54,4 +54,9 @@ public class ContentListenerAdapter implements ContentService.Listener {
 	public void recommendedRegionItemNotFound(String contentType) {
 
 	}
+
+	@Override
+	public void suggestedItemsReady(List<String> regionIds) {
+
+	}
 }

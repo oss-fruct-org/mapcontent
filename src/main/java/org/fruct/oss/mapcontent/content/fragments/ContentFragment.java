@@ -42,7 +42,7 @@ public class ContentFragment extends Fragment
 		ContentServiceConnectionListener, ContentService.Listener {
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
-    public ContentFragment() {
+	public ContentFragment() {
         // Required empty public constructor
     }
 
@@ -57,8 +57,10 @@ public class ContentFragment extends Fragment
 	private ContentListItem currentItem;
 	private String currentItemName;
 
-	private LocalContentState filteredState;
+	private boolean isSuggestRequested;
 
+	private LocalContentState filteredState;
+	private List<ContentListItem> contentListItems;
 
 	private List<ContentItem> localItems = Collections.emptyList();
 	private List<ContentItem> remoteItems = Collections.emptyList();
@@ -179,13 +181,13 @@ public class ContentFragment extends Fragment
 
 	@Override
 	public void localListReady(List<ContentItem> list) {
-		localItems = new ArrayList<ContentItem>(list);
+		localItems = new ArrayList<>(list);
 		setContentList(localItems, remoteItems);
 	}
 
 	@Override
 	public void remoteListReady(List<ContentItem> list) {
-		remoteItems = new ArrayList<ContentItem>(list);
+		remoteItems = new ArrayList<>(list);
 		setContentList(localItems, remoteItems);
 	}
 
@@ -246,6 +248,33 @@ public class ContentFragment extends Fragment
 	@Override
 	public void recommendedRegionItemNotFound(String contentType) {
 
+	}
+
+	@Override
+	public void suggestedItemsReady(List<String> regionIds) {
+		if (!isSuggestRequested) {
+			return;
+		}
+
+		if (contentListItems == null) {
+			return;
+		}
+
+		isSuggestRequested = false;
+
+		for (String regionId : regionIds) {
+			for (ContentListItem contentListItem : contentListItems) {
+				if (contentListItem.regionId.equals(regionId)) {
+					currentItem = contentListItem;
+
+					final ContentDialog dialog = new ContentDialog();
+					dialog.setListener(this);
+					dialog.setStorageItems(contentListItem.contentSubItems);
+					dialog.show(getFragmentManager(), "content-dialog");
+					return;
+				}
+			}
+		}
 	}
 
 	@Override
@@ -317,6 +346,10 @@ public class ContentFragment extends Fragment
 		return false;
 	}
 
+	protected void suggestItem() {
+		isSuggestRequested = true;
+	}
+
 	private void deleteContentItem(ContentListItem currentItem) {
 		boolean wasError = false;
 		if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
@@ -376,8 +409,11 @@ public class ContentFragment extends Fragment
 		remoteContent.addListener(this);
 
 		remoteContent.refresh(rootUrls);
+		if (isSuggestRequested) {
+			remoteContent.suggestItem();
+		}
 
-		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalContentItems()), Collections.<ContentItem>emptyList());
+		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()), Collections.<ContentItem>emptyList());
 	}
 
 	@Override
@@ -402,8 +438,7 @@ public class ContentFragment extends Fragment
 
 		@Override
 		protected List<ContentListItem> doInBackground(Void... params) {
-			HashMap<String, ContentListSubItem> states
-					= new HashMap<String, ContentListSubItem>(localItems.size());
+			HashMap<String, ContentListSubItem> states = new HashMap<>(localItems.size());
 
 			for (ContentItem item : localItems) {
 				states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
@@ -430,8 +465,7 @@ public class ContentFragment extends Fragment
 				states.put(name, new ContentListSubItem(saveItem, newState));
 			}
 
-			HashMap<String, List<ContentListSubItem>> listViewMap
-					= new HashMap<String, List<ContentListSubItem>>();
+			HashMap<String, List<ContentListSubItem>> listViewMap = new HashMap<>();
 
 			for (Map.Entry<String, ContentListSubItem> entry : states.entrySet()) {
 				String rId = entry.getValue().contentItem.getRegionId();
@@ -446,17 +480,18 @@ public class ContentFragment extends Fragment
 				List<ContentListSubItem> l = listViewMap.get(rId);
 
 				if (l == null) {
-					l = new ArrayList<ContentListSubItem>();
+					l = new ArrayList<>();
 					listViewMap.put(rId, l);
 				}
 
 				l.add(entry.getValue());
 			}
 
-			List<ContentListItem> listViewItems = new ArrayList<ContentListItem>();
+			List<ContentListItem> listViewItems = new ArrayList<>();
 			for (Map.Entry<String, List<ContentListSubItem>> entry : listViewMap.entrySet()) {
 				ContentListItem listViewItem = new ContentListItem();
 
+				listViewItem.regionId = entry.getKey();
 				listViewItem.name = entry.getValue().get(0).contentItem.getDescription();
 				listViewItem.contentSubItems = entry.getValue();
 
@@ -472,6 +507,7 @@ public class ContentFragment extends Fragment
 		@Override
 		protected void onPostExecute(List<ContentListItem> contentListItems) {
 			if (contentListItems != null && adapter != null) {
+				ContentFragment.this.contentListItems = contentListItems;
 				adapter.setItems(contentListItems);
 			}
 		}

@@ -72,7 +72,12 @@ public interface ContentManager {
 	 */
 	boolean deleteContentItem(ContentItem contentItem);
 
-	public interface Listener {
+	/**
+	 * Find remote items for region
+	 */
+	List<ContentItem> findSuggestedItems(Location location);
+
+	interface Listener {
 		void downloadStateUpdated(ContentItem item, int downloaded, int max);
 	}
 }
