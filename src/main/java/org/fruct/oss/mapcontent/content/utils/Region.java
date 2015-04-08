@@ -114,11 +114,8 @@ public class Region {
 			// Skip name
 			reader.readLine();
 
-			// Skip first section name
-			reader.readLine();
-
-			String line;
-			do {
+			String line = reader.readLine();
+			while (!line.startsWith("END")) {
 				Builder builder = new Builder();
 
 				line = reader.readLine();
@@ -129,10 +126,10 @@ public class Region {
 					builder.add(lat, lon);
 					line = reader.readLine();
 				}
-
 				ret.add(builder.build());
-				reader.readLine();
-			} while (!line.startsWith("END"));
+
+				line = reader.readLine();
+			}
 
 			return ret;
 		}

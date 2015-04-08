@@ -124,6 +124,7 @@ public class ContentManagerImpl implements ContentManager {
 					matchingItems.add(contentItem);
 				}
 			} else {
+				// TODO: don't update this every time
 				regions.put(contentItem.getRegionId(), region);
 				if (region.testHit(location.getLatitude(), location.getLongitude())) {
 					matchingItems.add(contentItem);
