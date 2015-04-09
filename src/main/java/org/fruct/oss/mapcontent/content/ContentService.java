@@ -5,6 +5,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -33,7 +36,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class ContentService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener, ContentManager.Listener {
+public class ContentService extends Service
+		implements SharedPreferences.OnSharedPreferenceChangeListener,
+		ContentManager.Listener {
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -43,12 +48,13 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private SharedPreferences pref;
 
-
 	private String dataPath;
-	private List<ContentServiceConnection> initializationListeners = new ArrayList<ContentServiceConnection>();
+	private List<ContentServiceConnection> initializationListeners = new CopyOnWriteArrayList<>();
 	private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
+	private LocationManager locationManager;
 	private Location previousLocation;
+	private LocationListener locationListener = new ContentServiceLocationListener();
 
 	private Future<?> initializationFuture;
 	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
@@ -57,6 +63,8 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		handler = new Handler(Looper.getMainLooper());
@@ -92,10 +100,13 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		});
 
 		pref.registerOnSharedPreferenceChangeListener(this);
+		locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 60000, 1000, locationListener);
 	}
 
 	@Override
 	public void onDestroy() {
+		locationManager.removeUpdates(locationListener);
+
 		pref.unregisterOnSharedPreferenceChangeListener(this);
 		executor.shutdown();
 
@@ -146,6 +157,7 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		listeners.add(listener);
 	}
 
+
 	public void interrupt() {
 		synchronized (downloadTasks) {
 			for (Future<?> task : downloadTasks) {
@@ -156,10 +168,13 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 	}
 
 	public boolean deleteContentItem(ContentItem contentItem) {
-		// TODO: deactivate deleted content item
 		return contentManager.deleteContentItem(contentItem);
 	}
 
+	/**
+	 * Download content item, notifying about download state through listener
+	 * @param contentItem remote content item to download
+	 */
 	public void downloadItem(final ContentItem contentItem) {
 		final NetworkContentItem remoteItem = (NetworkContentItem) contentItem;
 
@@ -172,9 +187,6 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 					ContentItem localContentItem = contentManager.downloadContentItem(remoteItem);
 					notifyDownloadFinished(contentItem, localContentItem);
 					notifyLocalListReady(getLocalContentItems());
-					if (previousLocation != null) {
-						checkRegion(previousLocation);
-					}
 				} catch (InterruptedIOException e) {
 					notifyDownloadInterrupted(contentItem);
 				} catch (IOException e) {
@@ -198,6 +210,11 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		}
 	}
 
+	/**
+	 * Request content list update
+	 * Listener will be used to notify about content list update
+	 * @param rootUrls URL of content root xmls in order of priority
+	 */
 	public void refresh(final String[] rootUrls) {
 		executor.execute(new Runnable() {
 			@Override
@@ -212,7 +229,11 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		});
 	}
 
-	public void setLocation(final Location location) {
+	/**
+	 * Notify content service about changed location
+	 * @param location
+	 */
+	private void setLocation(final Location location) {
 		if (location == null) {
 			return;
 		}
@@ -236,6 +257,15 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		return contentManager.activateContentItem(contentItem);
 	}
 
+	public String requestContentItemSource(ContentItem contentItem) {
+		String unpacked = contentManager.activateContentItem(contentItem);
+		if (unpacked != null) {
+			return ((DirectoryContentItem) contentItem).getPath();
+		} else {
+			return null;
+		}
+	}
+
 	public void suggestItem() {
 		if (previousLocation == null) {
 			isSuggestItemRequested = true;
@@ -257,16 +287,6 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 				notifySuggestedItemsReady(new ArrayList<>(ret));
 			}
 		});
-	}
-
-
-	public String requestContentItemSource(ContentItem contentItem) {
-		String unpacked = contentManager.activateContentItem(contentItem);
-		if (unpacked != null) {
-			return ((DirectoryContentItem) contentItem).getPath();
-		} else {
-			return null;
-		}
 	}
 
 	private void startForeground(int pendingIntentRequestCode, int notificationCode,
@@ -466,7 +486,30 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 		}
 	}
 
+	private class ContentServiceLocationListener implements LocationListener {
+		@Override
+		public void onLocationChanged(Location location) {
+			setLocation(location);
+		}
+
+		@Override
+		public void onStatusChanged(String provider, int status, Bundle extras) {
+
+		}
+
+		@Override
+		public void onProviderEnabled(String provider) {
+
+		}
+
+		@Override
+		public void onProviderDisabled(String provider) {
+
+		}
+	}
+
 	public interface Listener {
+		// Content download callbacks
 		void localListReady(List<ContentItem> list);
 		void remoteListReady(List<ContentItem> list);
 
@@ -478,12 +521,12 @@ public class ContentService extends Service implements SharedPreferences.OnShare
 
 		void downloadInterrupted(ContentItem item);
 
+
 		void recommendedRegionItemReady(ContentItem contentItem);
 		void recommendedRegionItemNotFound(String contentType);
 
 		void suggestedItemsReady(List<String> regionIds);
 
 		void requestContentReload();
-
 	}
 }
