@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
@@ -49,15 +50,16 @@ public class ContentService extends Service
 	private SharedPreferences pref;
 
 	private String dataPath;
-	private List<ContentServiceConnection> initializationListeners = new CopyOnWriteArrayList<>();
+	private final List<ContentServiceConnection> initializationListeners = new CopyOnWriteArrayList<>();
+	private final List<ItemListener> itemListeners = new CopyOnWriteArrayList<>();
 	private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
 	private LocationManager locationManager;
-	private Location previousLocation;
+	private Location lastLocation;
 	private LocationListener locationListener = new ContentServiceLocationListener();
 
 	private Future<?> initializationFuture;
-	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
+	private final List<Future<?>> downloadTasks = new ArrayList<>();
 	private boolean isSuggestItemRequested = false;
 
 	@Override
@@ -117,6 +119,7 @@ public class ContentService extends Service
 		return contentManager.getLocalContentItems();
 	}
 
+	@SuppressWarnings("unused")
 	public List<ContentItem> getRemoteContentItems() {
 		return contentManager.getRemoteContentItems();
 	}
@@ -157,6 +160,13 @@ public class ContentService extends Service
 		listeners.add(listener);
 	}
 
+	public void addItemListener(ItemListener itemListener) {
+		itemListeners.add(itemListener);
+	}
+
+	public void removeItemListener(ItemListener itemListener) {
+		itemListeners.remove(itemListener);
+	}
 
 	public void interrupt() {
 		synchronized (downloadTasks) {
@@ -230,33 +240,21 @@ public class ContentService extends Service
 	}
 
 	/**
-	 * Notify content service about changed location
-	 * @param location
+	 * Get path to unpacked content item
+	 * This method marks this item as active, preventing it from garbage collection
+	 * @param contentItem local item to request
+	 * @return path
 	 */
-	private void setLocation(final Location location) {
-		if (location == null) {
-			return;
-		}
-
-		if (previousLocation == null || location.distanceTo(previousLocation) > 10000) {
-			previousLocation = location;
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					checkRegion(location);
-
-					if (isSuggestItemRequested) {
-						suggestItem();
-					}
-				}
-			});
-		}
-	}
-
 	public String requestContentItem(ContentItem contentItem) {
 		return contentManager.activateContentItem(contentItem);
 	}
 
+	/**
+	 * Get path to content item downloaded file
+	 * This method marks this item as active, preventing it from garbage collection
+	 * @param contentItem local item to request
+	 * @return path
+	 */
 	public String requestContentItemSource(ContentItem contentItem) {
 		String unpacked = contentManager.activateContentItem(contentItem);
 		if (unpacked != null) {
@@ -266,20 +264,32 @@ public class ContentService extends Service
 		}
 	}
 
-	public void suggestItem() {
-		if (previousLocation == null) {
-			isSuggestItemRequested = true;
+	public void requestRecommendedItem() {
+		if (lastLocation == null) {
+			// No need to use field isRecommendedItemRequested, because setLocation always check region
 			return;
 		}
 
-		isSuggestItemRequested = false;
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				checkRegion(lastLocation);
+			}
+		});
+	}
+
+	public void requestSuggestedRegion() {
+		if (lastLocation == null) {
+			isSuggestItemRequested = true;
+			return;
+		}
 
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
 				Set<String> ret = new HashSet<>(2);
 
-				List<ContentItem> suggestedItems = contentManager.findSuggestedItems(previousLocation);
+				List<ContentItem> suggestedItems = contentManager.findSuggestedItems(lastLocation);
 				for (ContentItem suggestedItem : suggestedItems) {
 					ret.add(suggestedItem.getRegionId());
 				}
@@ -304,6 +314,21 @@ public class ContentService extends Service
 		startForeground(notificationCode, builder.build());
 	}
 
+	private void setLocation(@NonNull final Location location) {
+		lastLocation = location;
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				checkRegion(location);
+
+				if (isSuggestItemRequested) {
+					requestSuggestedRegion();
+					isSuggestItemRequested = false;
+				}
+			}
+		});
+	}
+
 	private void checkRegion(Location location) {
 		Set<String> contentTypes = new HashSet<>(2);
 		contentTypes.add(ContentManagerImpl.GRAPHHOPPER_MAP);
@@ -319,17 +344,6 @@ public class ContentService extends Service
 		for (String contentType : contentTypes) {
 			notifyRecommendedRegionItemNotFound(contentType);
 		}
-	}
-
-	private void notifyRecommendedRegionItemNotFound(final String contentType) {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				for (Listener listener : listeners) {
-					listener.recommendedRegionItemNotFound(contentType);
-				}
-			}
-		});
 	}
 
 	private void notifyLocalListReady(final List<ContentItem> items) {
@@ -415,8 +429,19 @@ public class ContentService extends Service
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
+				for (ItemListener listener : itemListeners) {
 					listener.recommendedRegionItemReady(localItem);
+				}
+			}
+		});
+	}
+
+	private void notifyRecommendedRegionItemNotFound(final String contentType) {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				for (ItemListener listener : itemListeners) {
+					listener.recommendedRegionItemNotFound(contentType);
 				}
 			}
 		});
@@ -426,7 +451,7 @@ public class ContentService extends Service
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
+				for (ItemListener listener : itemListeners) {
 					listener.requestContentReload();
 				}
 			}
@@ -437,20 +462,12 @@ public class ContentService extends Service
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
+				for (ItemListener listener : itemListeners) {
 					listener.suggestedItemsReady(regionIds);
 				}
 			}
 		});
 
-	}
-
-	public void test() {
-		Location location = new Location("test");
-		location.setLatitude(61.78);
-		location.setLongitude(34.35);
-
-		List<ContentItem> contentItemsByRegion = contentManager.findContentItemsByRegion(location);
 	}
 
 	@Override
@@ -511,17 +528,21 @@ public class ContentService extends Service
 	public interface Listener {
 		// Content download callbacks
 		void localListReady(List<ContentItem> list);
+
 		void remoteListReady(List<ContentItem> list);
 
 		void downloadStateUpdated(ContentItem item, int downloaded, int max);
+
 		void downloadFinished(ContentItem localItem, ContentItem remoteItem);
 
 		void errorDownloading(ContentItem item, IOException e);
+
 		void errorInitializing(IOException e);
 
 		void downloadInterrupted(ContentItem item);
+	}
 
-
+	public interface ItemListener {
 		void recommendedRegionItemReady(ContentItem contentItem);
 		void recommendedRegionItemNotFound(String contentType);
 

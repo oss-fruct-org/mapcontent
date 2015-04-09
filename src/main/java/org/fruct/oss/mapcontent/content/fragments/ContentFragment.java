@@ -39,7 +39,8 @@ public class ContentFragment extends Fragment
 		implements AdapterView.OnItemClickListener,
 		ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener,
 		ActionBar.OnNavigationListener,
-		ContentServiceConnectionListener, ContentService.Listener {
+		ContentServiceConnectionListener,
+		ContentService.Listener, ContentService.ItemListener {
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
 	public ContentFragment() {
@@ -407,10 +408,11 @@ public class ContentFragment extends Fragment
 	public void onContentServiceReady(ContentService contentService) {
 		remoteContent = contentService;
 		remoteContent.addListener(this);
+		remoteContent.addItemListener(this);
 
 		remoteContent.refresh(rootUrls);
 		if (isSuggestRequested) {
-			remoteContent.suggestItem();
+			remoteContent.requestSuggestedRegion();
 		}
 
 		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()), Collections.<ContentItem>emptyList());
