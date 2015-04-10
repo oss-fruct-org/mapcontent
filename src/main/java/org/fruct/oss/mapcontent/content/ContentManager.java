@@ -26,6 +26,11 @@ public interface ContentManager {
 	List<ContentItem> getRemoteContentItems();
 
 	/**
+	 * Checks if any local content item has update
+	 */
+	boolean checkUpdates();
+
+	/**
 	 * Return all content items in location
 	 * @param location location to search content items
 	 * @return content items list

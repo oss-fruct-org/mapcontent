@@ -2,7 +2,7 @@ package org.fruct.oss.mapcontent.content.fragments;
 
 import org.fruct.oss.mapcontent.content.ContentItem;
 
-class ContentListSubItem implements Comparable<ContentListSubItem> {
+public class ContentListSubItem implements Comparable<ContentListSubItem> {
 	ContentListSubItem(ContentItem contentItem, ContentFragment.LocalContentState state) {
 		this.contentItem = contentItem;
 		this.state = state;

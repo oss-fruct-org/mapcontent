@@ -20,6 +20,7 @@ import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.contenttype.*;
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
+import org.fruct.oss.mapcontent.content.fragments.ContentListItem;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.RegionCache;
 
@@ -232,6 +233,9 @@ public class ContentService extends Service
 				try {
 					contentManager.refreshRemoteContentList(rootUrls);
 					notifyRemoteListReady(contentManager.getRemoteContentItems());
+					if (contentManager.checkUpdates()) {
+						notifyUpdateReady();
+					}
 				} catch (IOException e) {
 					notifyErrorInitializing(e);
 				}
@@ -458,6 +462,17 @@ public class ContentService extends Service
 		});
 	}
 
+	private void notifyUpdateReady() {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				for (ItemListener listener : itemListeners) {
+					listener.updateReady();
+				}
+			}
+		});
+	}
+
 	private void notifySuggestedItemsReady(final List<String> regionIds) {
 		handler.post(new Runnable() {
 			@Override
@@ -526,7 +541,6 @@ public class ContentService extends Service
 	}
 
 	public interface Listener {
-		// Content download callbacks
 		void localListReady(List<ContentItem> list);
 
 		void remoteListReady(List<ContentItem> list);
@@ -545,6 +559,8 @@ public class ContentService extends Service
 	public interface ItemListener {
 		void recommendedRegionItemReady(ContentItem contentItem);
 		void recommendedRegionItemNotFound(String contentType);
+
+		void updateReady();
 
 		void suggestedItemsReady(List<String> regionIds);
 

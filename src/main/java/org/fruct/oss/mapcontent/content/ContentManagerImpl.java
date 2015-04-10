@@ -107,6 +107,27 @@ public class ContentManagerImpl implements ContentManager {
 	}
 
 	@Override
+	public boolean checkUpdates() {
+		if (remoteContentItems == null) {
+			return false;
+		}
+
+		Map<String, ContentItem> nameToItemMap = new HashMap<>();
+		for (ContentItem localContentItem : localContentItems) {
+			nameToItemMap.put(localContentItem.getName(), localContentItem);
+		}
+
+		for (ContentItem remoteContentItem : remoteContentItems) {
+			ContentItem localContentItem = nameToItemMap.get(remoteContentItem.getName());
+			if (localContentItem != null && !localContentItem.getHash().equals(remoteContentItem.getHash())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
 	public synchronized List<ContentItem> findContentItemsByRegion(Location location) {
 		List<ContentItem> matchingItems = new ArrayList<>();
 
@@ -209,7 +230,6 @@ public class ContentManagerImpl implements ContentManager {
 				log.warn("Unsupported hash algorithm");
 			}
 
-			mainLocalStorage.markObsolete(remoteItem);
 			ContentItem contentItem = mainLocalStorage.storeContentItem(remoteItem, inputStream);
 			refreshLocalItemsList();
 			return contentItem;

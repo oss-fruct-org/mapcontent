@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.view.ActionMode;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -139,9 +140,11 @@ public class ContentFragment extends Fragment
 
 	private void setupSpinner() {
 		ActionBar actionBar = ((ActionBarActivity) getActivity()).getSupportActionBar();
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 		SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(getActivity(), R.array.content_spinner,
 				R.layout.support_simple_spinner_dropdown_item);
 		actionBar.setListNavigationCallbacks(spinnerAdapter, this);
+		actionBar.setSelectedNavigationItem(getArguments() != null && getArguments().getBoolean("update") ? 2 : 0);
 	}
 
 	@Override
@@ -248,6 +251,11 @@ public class ContentFragment extends Fragment
 
 	@Override
 	public void recommendedRegionItemNotFound(String contentType) {
+
+	}
+
+	@Override
+	public void updateReady() {
 
 	}
 
@@ -410,12 +418,19 @@ public class ContentFragment extends Fragment
 		remoteContent.addListener(this);
 		remoteContent.addItemListener(this);
 
-		remoteContent.refresh(rootUrls);
+		List<ContentItem> remoteContentItems = remoteContent.getRemoteContentItems();
+		if (remoteContentItems != null && !remoteContentItems.isEmpty()) {
+			setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
+					remoteItems = new ArrayList<>(remoteContentItems));
+		} else {
+			remoteContent.refresh(rootUrls);
+			setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
+					Collections.<ContentItem>emptyList());
+		}
+
 		if (isSuggestRequested) {
 			remoteContent.requestSuggestedRegion();
 		}
-
-		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()), Collections.<ContentItem>emptyList());
 	}
 
 	@Override

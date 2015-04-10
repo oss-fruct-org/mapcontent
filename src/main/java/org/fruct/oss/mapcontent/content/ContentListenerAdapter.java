@@ -17,6 +17,11 @@ public class ContentListenerAdapter implements ContentService.ItemListener {
 	}
 
 	@Override
+	public void updateReady() {
+
+	}
+
+	@Override
 	public void suggestedItemsReady(List<String> regionIds) {
 	}
 }

@@ -46,6 +46,8 @@ public class WritableDirectoryStorage extends DirectoryStorage {
 
 			StrUtil.copyStream(input, output);
 
+			markObsolete(remoteContentItem);
+
 			if (!outputFile.renameTo(targetFile))
 				throw new IOException("Can't replace original file with loaded file");
 

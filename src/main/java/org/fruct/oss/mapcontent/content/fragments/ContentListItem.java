@@ -2,7 +2,7 @@ package org.fruct.oss.mapcontent.content.fragments;
 
 import java.util.List;
 
-class ContentListItem implements Comparable<ContentListItem> {
+public class ContentListItem implements Comparable<ContentListItem> {
 	List<ContentListSubItem> contentSubItems;
 	String name;
 	String regionId;
