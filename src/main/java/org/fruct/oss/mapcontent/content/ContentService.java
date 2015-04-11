@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
@@ -116,11 +117,17 @@ public class ContentService extends Service
 		super.onDestroy();
 	}
 
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_NOT_STICKY;
+	}
+
+	@NonNull
 	public List<ContentItem> getLocalContentItems() {
 		return contentManager.getLocalContentItems();
 	}
 
-	@SuppressWarnings("unused")
+	@NonNull
 	public List<ContentItem> getRemoteContentItems() {
 		return contentManager.getRemoteContentItems();
 	}
@@ -225,8 +232,13 @@ public class ContentService extends Service
 	 * Request content list update
 	 * Listener will be used to notify about content list update
 	 * @param rootUrls URL of content root xmls in order of priority
+	 * @param forceRefresh if set to false, refresh will be skipped if data already loaded
 	 */
-	public void refresh(final String[] rootUrls) {
+	public void refresh(final String[] rootUrls, boolean forceRefresh) {
+		if (!forceRefresh && !contentManager.getRemoteContentItems().isEmpty()) {
+			return;
+		}
+
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {

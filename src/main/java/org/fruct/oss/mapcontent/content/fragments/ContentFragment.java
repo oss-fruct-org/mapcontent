@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.view.ActionMode;
-import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -45,8 +44,8 @@ public class ContentFragment extends Fragment
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
 	public ContentFragment() {
-        // Required empty public constructor
-    }
+		// Required empty public constructor
+	}
 
 	private ContentServiceConnection remoteContentServiceConnection
 			= new ContentServiceConnection(this);
@@ -163,7 +162,7 @@ public class ContentFragment extends Fragment
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.action_refresh) {
 			if (remoteContent != null) {
-				remoteContent.refresh(rootUrls);
+				remoteContent.refresh(rootUrls, true);
 			}
 		}
 
@@ -418,15 +417,9 @@ public class ContentFragment extends Fragment
 		remoteContent.addListener(this);
 		remoteContent.addItemListener(this);
 
-		List<ContentItem> remoteContentItems = remoteContent.getRemoteContentItems();
-		if (remoteContentItems != null && !remoteContentItems.isEmpty()) {
-			setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
-					remoteItems = new ArrayList<>(remoteContentItems));
-		} else {
-			remoteContent.refresh(rootUrls);
-			setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
-					Collections.<ContentItem>emptyList());
-		}
+		remoteContent.refresh(rootUrls, false);
+		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
+				remoteItems = new ArrayList<>(remoteContent.getRemoteContentItems()));
 
 		if (isSuggestRequested) {
 			remoteContent.requestSuggestedRegion();

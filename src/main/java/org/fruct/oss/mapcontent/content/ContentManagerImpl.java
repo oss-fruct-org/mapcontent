@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.utils.DigestInputStream;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +51,8 @@ public class ContentManagerImpl implements ContentManager {
 
 	private NetworkStorage networkStorage;
 
-	private List<ContentItem> localContentItems;
-	private List<ContentItem> remoteContentItems;
+	private List<ContentItem> localContentItems = Collections.emptyList();
+	private List<ContentItem> remoteContentItems = Collections.emptyList();
 
 	private Listener listener;
 
@@ -97,11 +99,13 @@ public class ContentManagerImpl implements ContentManager {
 	}
 
 	@Override
+	@NonNull
 	public synchronized List<ContentItem> getLocalContentItems() {
 		return localContentItems;
 	}
 
 	@Override
+	@NonNull
 	public synchronized List<ContentItem> getRemoteContentItems() {
 		return remoteContentItems;
 	}
