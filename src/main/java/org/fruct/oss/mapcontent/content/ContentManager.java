@@ -82,6 +82,8 @@ public interface ContentManager {
 	 */
 	List<ContentItem> findSuggestedItems(Location location);
 
+
+
 	interface Listener {
 		void downloadStateUpdated(ContentItem item, int downloaded, int max);
 	}

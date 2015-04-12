@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -53,4 +54,18 @@ public class StrUtil {
 
 		return toHex(md5.digest());
 	}
+
+	public static String readerToString(Reader reader) throws IOException {
+		StringBuilder builder = new StringBuilder();
+		int bufferSize = 4096;
+		char[] buf = new char[bufferSize];
+
+		int readed;
+		while ((readed = reader.read(buf)) > 0) {
+			builder.append(buf, 0, readed);
+		}
+
+		return builder.toString();
+	}
+
 }

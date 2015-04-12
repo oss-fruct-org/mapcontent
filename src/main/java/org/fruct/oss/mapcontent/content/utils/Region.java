@@ -1,5 +1,8 @@
 package org.fruct.oss.mapcontent.content.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,12 +12,24 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 public class Region {
+
 	private static final double DELTA = 0.0001;
 	private final List<Polygon> polygons;
+	private final String name;
+	private final int adminLevel;
 
 	public Region(InputStream input) throws IOException {
 		this.polygons = Polygon.fromPath(input);
+		this.name = "";
+		this.adminLevel = 4; // 4 in Russia is "federal subject"
 	}
+
+	public Region(InputStream input, String name, int adminLevel) throws IOException {
+		this.polygons = Polygon.fromPath(input);
+		this.name = name;
+		this.adminLevel = adminLevel;
+	}
+
 
 	public boolean testHit(double rLat, double rLon) {
 		// Test AABB

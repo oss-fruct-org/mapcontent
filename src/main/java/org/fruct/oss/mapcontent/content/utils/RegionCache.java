@@ -1,27 +1,38 @@
 package org.fruct.oss.mapcontent.content.utils;
 
+import android.util.JsonReader;
+
 import org.apache.http.client.utils.URIUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 public class RegionCache {
+	private static final Logger log = LoggerFactory.getLogger(RegionCache.class);
+
 	private final File cacheDir;
 
-	private Map<String, File> cachedFiles = new HashMap<>();
+	private Map<String, RegionDesc> cachedFiles = new HashMap<>();
 	private Map<String, Region> regionsCache = new HashMap<>();
 
 	public RegionCache(File cacheDir) {
@@ -32,6 +43,7 @@ public class RegionCache {
 	}
 
 	public void clearDiskCache() {
+		// Delete *.poly and *.zip files
 		for (File file : cacheDir.listFiles()) {
 			file.delete();
 		}
@@ -45,14 +57,47 @@ public class RegionCache {
 		FileFilter filter = new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
-				return pathname.getName().endsWith(".poly");
+				return pathname.getName().endsWith(".json");
 			}
 		};
 
 		for (File file : cacheDir.listFiles(filter)) {
-			String fileName = file.getName();
-			String regionId = fileName.substring(0, fileName.length() - 5 /* '.poly' length */);
-			cachedFiles.put(regionId, file);
+			loadRegionsFile(file);
+		}
+	}
+
+	private void loadRegionsFile(File file) {
+		FileReader reader = null;
+		try {
+			reader = new FileReader(file);
+			JSONObject jsonObject = new JSONObject(StrUtil.readerToString(reader));
+
+			JSONArray regionsJson = jsonObject.getJSONArray("regions");
+			for (int i = 0; i < regionsJson.length(); i++) {
+				JSONObject regionJson = regionsJson.getJSONObject(i);
+
+				int adminLevel = regionJson.getInt("admin-level");
+				String polyFile = regionJson.getString("poly-file");
+				String regionId = regionJson.getString("regionId");
+				JSONObject names = regionJson.getJSONObject("names");
+
+				String localeName;
+				try {
+					localeName = names.getString(Locale.getDefault().getLanguage());
+				} catch (JSONException e) {
+					localeName = names.keys().next();
+				}
+
+				RegionDesc regionDesc = new RegionDesc(regionId, localeName, new File(cacheDir, polyFile), adminLevel);
+				cachedFiles.put(regionId, regionDesc);
+			}
+
+		} catch (IOException e) {
+			log.error("Can't read regions json file {}", file.toString(), e);
+		} catch (JSONException e) {
+			log.error("Json file invalid: {}", file.toString(), e);
+		} finally {
+			Utils.silentClose(reader);
 		}
 	}
 
@@ -62,14 +107,14 @@ public class RegionCache {
 			return region;
 		}
 
-		File regionFile = cachedFiles.get(regionId);
-		if (regionFile == null) {
+		RegionDesc regionDesc = cachedFiles.get(regionId);
+		if (regionDesc == null) {
 			return null;
 		}
 
 		FileInputStream input = null;
 		try {
-			input = new FileInputStream(regionFile);
+			input = new FileInputStream(regionDesc.file);
 			region = new Region(input);
 			regionsCache.put(regionId, region);
 			return region;
@@ -83,11 +128,6 @@ public class RegionCache {
 
 	public void putRegion(String regionId, Region region) {
 		regionsCache.put(regionId, region);
-	}
-
-	public void putRegions(File zipArchive) throws IOException {
-		DirUtil.unzip(zipArchive, cacheDir);
-		loadCachedFiles();
 	}
 
 	public void updateDiskCache(String[] cacheUrls) throws IOException {
@@ -108,6 +148,14 @@ public class RegionCache {
 				StrUtil.copyStream(inputStream, outputStream);
 
 				DirUtil.unzip(tmpFile, cacheDir);
+
+				// Rename regions.json to unique name
+				File regionsZipFile = new File(cacheDir, "regions.json");
+				if (regionsZipFile.exists()) {
+					if (!regionsZipFile.renameTo(new File(cacheDir, cacheUrl.hashCode() + ".json"))) {
+						throw new IOException("Can't rename regions.json file");
+					}
+				}
 			} finally {
 				Utils.silentClose(inputStream);
 				Utils.silentClose(outputStream);
@@ -115,5 +163,19 @@ public class RegionCache {
 		}
 
 		loadCachedFiles();
+	}
+
+	private static class RegionDesc {
+		String regionId;
+		String name;
+		File file;
+		int adminLevel;
+
+		public RegionDesc(String regionId, String name, File file, int adminLevel) {
+			this.regionId = regionId;
+			this.name = name;
+			this.file = file;
+			this.adminLevel = adminLevel;
+		}
 	}
 }
