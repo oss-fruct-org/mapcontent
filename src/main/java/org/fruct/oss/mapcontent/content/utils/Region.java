@@ -15,6 +15,7 @@ public class Region {
 
 	private static final double DELTA = 0.0001;
 	private final List<Polygon> polygons;
+
 	private final String name;
 	private final int adminLevel;
 
@@ -30,6 +31,13 @@ public class Region {
 		this.adminLevel = adminLevel;
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	public int getAdminLevel() {
+		return adminLevel;
+	}
 
 	public boolean testHit(double rLat, double rLon) {
 		// Test AABB

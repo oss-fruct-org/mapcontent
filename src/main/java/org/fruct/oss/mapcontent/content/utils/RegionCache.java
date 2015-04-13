@@ -166,26 +166,26 @@ public class RegionCache {
 	}
 
 	/**
-	 * Find all regions for this location
+	 * Find all regions info for this location
 	 * @param location location
 	 * @return array of regions for this location
 	 */
-	public synchronized List<Region> findRegions(Location location) {
-		List<Region> foundRegions = new ArrayList<>();
+	public synchronized List<RegionDesc> findRegions(Location location) {
+		List<RegionDesc> foundRegions = new ArrayList<>();
 		for (RegionDesc regionDesc : cachedFiles.values()) {
 			Region region = getRegion(regionDesc.regionId);
 			if (region.testHit(location.getLatitude(), location.getLongitude())) {
-				foundRegions.add(region);
+				foundRegions.add(regionDesc);
 			}
 		}
 		return foundRegions;
 	}
 
-	private static class RegionDesc {
-		String regionId;
-		String name;
+	public static class RegionDesc {
+		public String regionId;
+		public String name;
 		File file;
-		int adminLevel;
+		public int adminLevel;
 
 		public RegionDesc(String regionId, String name, File file, int adminLevel) {
 			this.regionId = regionId;

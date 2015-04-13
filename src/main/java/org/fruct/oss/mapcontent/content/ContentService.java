@@ -14,14 +14,12 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
-import org.fruct.oss.mapcontent.content.contenttype.*;
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
-import org.fruct.oss.mapcontent.content.fragments.ContentListItem;
+import org.fruct.oss.mapcontent.content.contenttype.GraphhopperContentType;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.RegionCache;
 
@@ -42,6 +40,8 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
+	public static final String PREF_LAST_REFRESH_TIME = "org.fruct.oss.mapcontent.content.PREF_LAST_REFRESH_TIME";
+
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -246,6 +246,9 @@ public class ContentService extends Service
 				try {
 					contentManager.refreshRemoteContentList(rootUrls);
 					notifyRemoteListReady(contentManager.getRemoteContentItems());
+
+					pref.edit().putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis()).apply();
+
 					if (contentManager.checkUpdates()) {
 						notifyUpdateReady();
 					}
@@ -314,6 +317,10 @@ public class ContentService extends Service
 				notifySuggestedItemsReady(new ArrayList<>(ret));
 			}
 		});
+	}
+
+	public RegionCache getRegionCache() {
+		return regionCache;
 	}
 
 	private void startForeground(int pendingIntentRequestCode, int notificationCode,
