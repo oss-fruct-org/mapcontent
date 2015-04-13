@@ -46,6 +46,7 @@ public class ContentService extends Service
 
 	private KeyValue digestCache;
 	private ContentManager contentManager;
+	private RegionCache regionCache;
 
 	private Handler handler;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -75,7 +76,7 @@ public class ContentService extends Service
 
 		dataPath = pref.getString(Settings.PREF_STORAGE_PATH, null);
 		digestCache = new KeyValue(this, "digestcache");
-
+		regionCache = new RegionCache(new File(getCacheDir(), "region-cache"));
 		if (dataPath == null) {
 			DirUtil.StorageDirDesc[] contentPaths = DirUtil.getPrivateStorageDirs(this);
 			dataPath = contentPaths[0].path;
@@ -91,7 +92,7 @@ public class ContentService extends Service
 				contentManager = new ContentManagerImpl(ContentService.this,
 						dataPath,
 						digestCache,
-						new RegionCache(new File(getCacheDir(), "region-cache")),
+						regionCache,
 						contentTypes);
 				try {
 					contentManager.garbageCollect();

@@ -1,8 +1,7 @@
 package org.fruct.oss.mapcontent.content.utils;
 
-import android.util.JsonReader;
+import android.location.Location;
 
-import org.apache.http.client.utils.URIUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,28 +11,24 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 public class RegionCache {
 	private static final Logger log = LoggerFactory.getLogger(RegionCache.class);
 
 	private final File cacheDir;
 
-	private Map<String, RegionDesc> cachedFiles = new HashMap<>();
-	private Map<String, Region> regionsCache = new HashMap<>();
+	private final Map<String, RegionDesc> cachedFiles = new HashMap<>();
+	private final Map<String, Region> regionsCache = new HashMap<>();
 
 	public RegionCache(File cacheDir) {
 		this.cacheDir = cacheDir;
@@ -42,11 +37,12 @@ public class RegionCache {
 		loadCachedFiles();
 	}
 
-	public void clearDiskCache() {
+	private void clearDiskCache() {
 		// Delete *.poly and *.zip files
 		for (File file : cacheDir.listFiles()) {
 			file.delete();
 		}
+		regionsCache.clear();
 	}
 
 	private void loadCachedFiles() {
@@ -61,6 +57,7 @@ public class RegionCache {
 			}
 		};
 
+		cachedFiles.clear();
 		for (File file : cacheDir.listFiles(filter)) {
 			loadRegionsFile(file);
 		}
@@ -104,7 +101,7 @@ public class RegionCache {
 		}
 	}
 
-	public Region getRegion(String regionId) {
+	public synchronized Region getRegion(String regionId) {
 		Region region = regionsCache.get(regionId);
 		if (region != null) {
 			return region;
@@ -129,11 +126,11 @@ public class RegionCache {
 		}
 	}
 
-	public void putRegion(String regionId, Region region) {
+	public synchronized void putRegion(String regionId, Region region) {
 		regionsCache.put(regionId, region);
 	}
 
-	public void updateDiskCache(String[] cacheUrls) throws IOException {
+	public synchronized void updateDiskCache(String[] cacheUrls) throws IOException {
 		if (!cacheDir.isDirectory()) {
 			return;
 		}
@@ -166,6 +163,22 @@ public class RegionCache {
 		}
 
 		loadCachedFiles();
+	}
+
+	/**
+	 * Find all regions for this location
+	 * @param location location
+	 * @return array of regions for this location
+	 */
+	public synchronized List<Region> findRegions(Location location) {
+		List<Region> foundRegions = new ArrayList<>();
+		for (RegionDesc regionDesc : cachedFiles.values()) {
+			Region region = getRegion(regionDesc.regionId);
+			if (region.testHit(location.getLatitude(), location.getLongitude())) {
+				foundRegions.add(region);
+			}
+		}
+		return foundRegions;
 	}
 
 	private static class RegionDesc {

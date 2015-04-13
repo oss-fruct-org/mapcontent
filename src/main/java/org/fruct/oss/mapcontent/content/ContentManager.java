@@ -2,6 +2,8 @@ package org.fruct.oss.mapcontent.content;
 
 import android.location.Location;
 
+import org.fruct.oss.mapcontent.content.utils.Region;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -81,8 +83,6 @@ public interface ContentManager {
 	 * Find remote items for region
 	 */
 	List<ContentItem> findSuggestedItems(Location location);
-
-
 
 	interface Listener {
 		void downloadStateUpdated(ContentItem item, int downloaded, int max);
