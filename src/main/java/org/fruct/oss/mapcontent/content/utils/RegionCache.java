@@ -77,8 +77,8 @@ public class RegionCache {
 				JSONObject regionJson = regionsJson.getJSONObject(i);
 
 				int adminLevel = regionJson.getInt("admin-level");
-				String polyFile = regionJson.getString("poly-file");
-				String regionId = regionJson.getString("regionId");
+				String polyFileName = regionJson.getString("poly-file");
+				String regionId = regionJson.getString("region-id");
 				JSONObject names = regionJson.getJSONObject("names");
 
 				String localeName;
@@ -88,10 +88,13 @@ public class RegionCache {
 					localeName = names.keys().next();
 				}
 
-				RegionDesc regionDesc = new RegionDesc(regionId, localeName, new File(cacheDir, polyFile), adminLevel);
-				cachedFiles.put(regionId, regionDesc);
-			}
+				File polyFile = new File(cacheDir, polyFileName);
 
+				if (polyFile.exists()) {
+					RegionDesc regionDesc = new RegionDesc(regionId, localeName, polyFile, adminLevel);
+					cachedFiles.put(regionId, regionDesc);
+				}
+			}
 		} catch (IOException e) {
 			log.error("Can't read regions json file {}", file.toString(), e);
 		} catch (JSONException e) {
