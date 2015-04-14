@@ -421,10 +421,6 @@ public class ContentFragment extends Fragment
 		remoteContent.refresh(rootUrls, false);
 		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
 				remoteItems = new ArrayList<>(remoteContent.getRemoteContentItems()));
-
-		if (isSuggestRequested) {
-			remoteContent.requestSuggestedRegion();
-		}
 	}
 
 	@Override
@@ -520,6 +516,10 @@ public class ContentFragment extends Fragment
 			if (contentListItems != null && adapter != null) {
 				ContentFragment.this.contentListItems = contentListItems;
 				adapter.setItems(contentListItems);
+
+				if (isSuggestRequested) {
+					remoteContent.requestSuggestedRegion();
+				}
 			}
 		}
 	}
