@@ -40,7 +40,6 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
-	public static final String PREF_LAST_REFRESH_TIME = "org.fruct.oss.mapcontent.content.PREF_LAST_REFRESH_TIME";
 
 	private Binder binder = new Binder();
 
@@ -76,7 +75,7 @@ public class ContentService extends Service
 
 		dataPath = pref.getString(Settings.PREF_STORAGE_PATH, null);
 		digestCache = new KeyValue(this, "digestcache");
-		regionCache = new RegionCache(new File(getCacheDir(), "region-cache"));
+		regionCache = new RegionCache(this, new File(getCacheDir(), "region-cache"));
 		if (dataPath == null) {
 			DirUtil.StorageDirDesc[] contentPaths = DirUtil.getPrivateStorageDirs(this);
 			dataPath = contentPaths[0].path;
@@ -247,7 +246,6 @@ public class ContentService extends Service
 					contentManager.refreshRemoteContentList(rootUrls);
 					notifyRemoteListReady(contentManager.getRemoteContentItems());
 
-					pref.edit().putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis()).apply();
 
 					if (contentManager.checkUpdates()) {
 						notifyUpdateReady();

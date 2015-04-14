@@ -1,6 +1,9 @@
 package org.fruct.oss.mapcontent.content.utils;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Location;
+import android.preference.PreferenceManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,13 +19,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class RegionCache {
+	private static final String PREF_LAST_REFRESH_TIME = "org.fruct.oss.mapcontent.content.PREF_LAST_REFRESH_TIME";
 	private static final Logger log = LoggerFactory.getLogger(RegionCache.class);
 
 	private final File cacheDir;
@@ -30,7 +33,10 @@ public class RegionCache {
 	private final Map<String, RegionDesc> cachedFiles = new HashMap<>();
 	private final Map<String, Region> regionsCache = new HashMap<>();
 
-	public RegionCache(File cacheDir) {
+	private Context context;
+
+	public RegionCache(Context context, File cacheDir) {
+		this.context = context.getApplicationContext();
 		this.cacheDir = cacheDir;
 		cacheDir.mkdirs();
 
@@ -162,6 +168,9 @@ public class RegionCache {
 			}
 		}
 
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+		pref.edit().putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis()).apply();
+
 		loadCachedFiles();
 	}
 
@@ -179,6 +188,11 @@ public class RegionCache {
 			}
 		}
 		return foundRegions;
+	}
+
+	public long getLastRefreshTime() {
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+		return pref.getLong(PREF_LAST_REFRESH_TIME, 0);
 	}
 
 	public static class RegionDesc {
