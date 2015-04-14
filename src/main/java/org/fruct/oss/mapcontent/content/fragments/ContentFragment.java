@@ -129,6 +129,7 @@ public class ContentFragment extends Fragment
 	public void onPause() {
 		if (remoteContent != null) {
 			remoteContent.removeListener(this);
+			remoteContent.removeItemListener(this);
 			remoteContent = null;
 		}
 
