@@ -264,7 +264,18 @@ public class ContentService extends Service
 	 * @return path
 	 */
 	public String requestContentItem(ContentItem contentItem) {
-		return contentManager.activateContentItem(contentItem);
+		String unpackedItemPath = contentManager.activateContentItem(contentItem);
+
+		if (unpackedItemPath == null) {
+			return null;
+		}
+
+		File regions6Dir = new File(unpackedItemPath, "regions6");
+		if (regions6Dir.exists() && regions6Dir.isDirectory()) {
+			regionCache.setAdditionalRegions(regions6Dir);
+		}
+
+		return unpackedItemPath;
 	}
 
 	/**

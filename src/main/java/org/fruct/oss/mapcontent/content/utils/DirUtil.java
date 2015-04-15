@@ -2,14 +2,18 @@ package org.fruct.oss.mapcontent.content.utils;
 
 import android.content.Context;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 
 import org.fruct.oss.mapcontent.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +22,28 @@ import java.util.zip.ZipInputStream;
 
 public class DirUtil {
 	private static final Logger log = LoggerFactory.getLogger(DirUtil.class);
+
+	/*
+	public void writeFileString(@NonNull File file, @NonNull String string) throws IOException {
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(file);
+			writer.write(string);
+		} finally {
+			Utils.silentClose(writer);
+		}
+	}
+
+	public String readFileString(@NonNull File file) throws IOException {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			return StrUtil.readerToString(reader);
+		} finally {
+			Utils.silentClose(reader);
+		}
+	}
+*/
 
 	public static void unzip(File zipFile, File outputDir) throws IOException {
 		ZipInputStream zipInputStream = null;

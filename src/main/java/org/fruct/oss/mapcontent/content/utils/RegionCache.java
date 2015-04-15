@@ -25,10 +25,10 @@ import java.util.Locale;
 import java.util.Map;
 
 public class RegionCache {
-	private static final String PREF_LAST_REFRESH_TIME = "org.fruct.oss.mapcontent.content.PREF_LAST_REFRESH_TIME";
 	private static final Logger log = LoggerFactory.getLogger(RegionCache.class);
 
 	private final File cacheDir;
+	private File additionalDir;
 
 	private final Map<String, RegionDesc> cachedFiles = new HashMap<>();
 	private final Map<String, Region> regionsCache = new HashMap<>();
@@ -40,71 +40,7 @@ public class RegionCache {
 		this.cacheDir = cacheDir;
 		cacheDir.mkdirs();
 
-		loadCachedFiles();
-	}
-
-	private void clearDiskCache() {
-		// Delete *.poly and *.zip files
-		for (File file : cacheDir.listFiles()) {
-			file.delete();
-		}
-		regionsCache.clear();
-	}
-
-	private void loadCachedFiles() {
-		if (!cacheDir.isDirectory()) {
-			return;
-		}
-
-		FileFilter filter = new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return pathname.getName().endsWith(".json");
-			}
-		};
-
-		cachedFiles.clear();
-		for (File file : cacheDir.listFiles(filter)) {
-			loadRegionsFile(file);
-		}
-	}
-
-	private void loadRegionsFile(File file) {
-		FileReader reader = null;
-		try {
-			reader = new FileReader(file);
-			JSONObject jsonObject = new JSONObject(StrUtil.readerToString(reader));
-
-			JSONArray regionsJson = jsonObject.getJSONArray("regions");
-			for (int i = 0; i < regionsJson.length(); i++) {
-				JSONObject regionJson = regionsJson.getJSONObject(i);
-
-				int adminLevel = regionJson.getInt("admin-level");
-				String polyFileName = regionJson.getString("poly-file");
-				String regionId = regionJson.getString("region-id");
-				JSONObject names = regionJson.getJSONObject("names");
-
-				String localeName;
-				try {
-					localeName = names.getString(Locale.getDefault().getLanguage());
-				} catch (JSONException e) {
-					localeName = names.keys().next();
-				}
-
-				File polyFile = new File(cacheDir, polyFileName);
-
-				if (polyFile.exists()) {
-					RegionDesc regionDesc = new RegionDesc(regionId, localeName, polyFile, adminLevel);
-					cachedFiles.put(regionId, regionDesc);
-				}
-			}
-		} catch (IOException e) {
-			log.error("Can't read regions json file {}", file.toString(), e);
-		} catch (JSONException e) {
-			log.error("Json file invalid: {}", file.toString(), e);
-		} finally {
-			Utils.silentClose(reader);
-		}
+		loadCachedFiles(cacheDir);
 	}
 
 	public synchronized Region getRegion(String regionId) {
@@ -168,9 +104,6 @@ public class RegionCache {
 			}
 		}
 
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-		pref.edit().putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis()).apply();
-
 		loadCachedFiles();
 	}
 
@@ -190,10 +123,86 @@ public class RegionCache {
 		return foundRegions;
 	}
 
-	public long getLastRefreshTime() {
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-		return pref.getLong(PREF_LAST_REFRESH_TIME, 0);
+	public synchronized long getLastRefreshTime() {
+		return Math.max(cacheDir.lastModified(), additionalDir != null ? additionalDir.lastModified() : 0);
 	}
+
+	public synchronized void setAdditionalRegions(File addRegionsDir) {
+		this.additionalDir = addRegionsDir;
+		loadCachedFiles(additionalDir);
+	}
+
+	private void clearDiskCache() {
+		// Delete *.poly and *.zip files
+		for (File file : cacheDir.listFiles()) {
+			file.delete();
+		}
+		regionsCache.clear();
+	}
+
+	private void loadCachedFiles() {
+		cachedFiles.clear();
+		loadCachedFiles(cacheDir);
+		if (additionalDir != null) {
+			loadCachedFiles(additionalDir);
+		}
+	}
+
+	private void loadCachedFiles(File cacheDir) {
+		if (!cacheDir.isDirectory()) {
+			return;
+		}
+
+		FileFilter filter = new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getName().endsWith(".json");
+			}
+		};
+
+		for (File file : cacheDir.listFiles(filter)) {
+			loadRegionsFile(cacheDir, file);
+		}
+	}
+
+	private void loadRegionsFile(File cacheDir, File file) {
+		FileReader reader = null;
+		try {
+			reader = new FileReader(file);
+			JSONObject jsonObject = new JSONObject(StrUtil.readerToString(reader));
+
+			JSONArray regionsJson = jsonObject.getJSONArray("regions");
+			for (int i = 0; i < regionsJson.length(); i++) {
+				JSONObject regionJson = regionsJson.getJSONObject(i);
+
+				int adminLevel = regionJson.getInt("admin-level");
+				String polyFileName = regionJson.getString("poly-file");
+				String regionId = regionJson.getString("region-id");
+				JSONObject names = regionJson.getJSONObject("names");
+
+				String localeName;
+				try {
+					localeName = names.getString(Locale.getDefault().getLanguage());
+				} catch (JSONException e) {
+					localeName = names.keys().next();
+				}
+
+				File polyFile = new File(cacheDir, polyFileName);
+
+				if (polyFile.exists()) {
+					RegionDesc regionDesc = new RegionDesc(regionId, localeName, polyFile, adminLevel);
+					cachedFiles.put(regionId, regionDesc);
+				}
+			}
+		} catch (IOException e) {
+			log.error("Can't read regions json file {}", file.toString(), e);
+		} catch (JSONException e) {
+			log.error("Json file invalid: {}", file.toString(), e);
+		} finally {
+			Utils.silentClose(reader);
+		}
+	}
+
 
 	public static class RegionDesc {
 		public String regionId;
