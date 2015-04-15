@@ -223,7 +223,7 @@ public class ContentFragment extends Fragment
 	}
 
 	@Override
-	public void errorInitializing(IOException e) {
+	public void errorInitializing(Exception e) {
 		showToast(getString(R.string.no_networks_offline));
 	}
 

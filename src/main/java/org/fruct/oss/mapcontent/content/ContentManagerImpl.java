@@ -49,8 +49,6 @@ public class ContentManagerImpl implements ContentManager {
 	private final HashMap<String, ContentType> contentTypes = new HashMap<>();
 	private final RegionCache regionCache;
 
-	private NetworkStorage networkStorage;
-
 	private List<ContentItem> localContentItems = Collections.emptyList();
 	private List<ContentItem> remoteContentItems = Collections.emptyList();
 
@@ -83,7 +81,7 @@ public class ContentManagerImpl implements ContentManager {
 
 	@Override
 	public void refreshRemoteContentList(String[] rootUrls) throws IOException {
-		networkStorage = new NetworkStorage(rootUrls, regionCache);
+		NetworkStorage networkStorage = new NetworkStorage(rootUrls, regionCache);
 
 		networkStorage.updateContentList();
 		List<ContentItem> remoteItems = new ArrayList<>();
@@ -97,21 +95,23 @@ public class ContentManagerImpl implements ContentManager {
 
 		remoteContentItems = remoteItems;
 	}
-
 	@Override
 	@NonNull
-	public synchronized List<ContentItem> getLocalContentItems() {
+	public List<ContentItem> getLocalContentItems() {
 		return localContentItems;
 	}
 
 	@Override
 	@NonNull
-	public synchronized List<ContentItem> getRemoteContentItems() {
+	public List<ContentItem> getRemoteContentItems() {
 		return remoteContentItems;
 	}
 
 	@Override
 	public boolean checkUpdates() {
+		List<ContentItem> remoteContentItems = this.remoteContentItems;
+		List<ContentItem> localContentItems = this.localContentItems;
+
 		if (remoteContentItems == null) {
 			return false;
 		}
@@ -132,7 +132,9 @@ public class ContentManagerImpl implements ContentManager {
 	}
 
 	@Override
-	public synchronized List<ContentItem> findContentItemsByRegion(Location location) {
+	public List<ContentItem> findContentItemsByRegion(Location location) {
+		List<ContentItem> localContentItems = this.localContentItems;
+
 		List<ContentItem> matchingItems = new ArrayList<>();
 
 		for (ContentItem contentItem : localContentItems) {
@@ -164,7 +166,7 @@ public class ContentManagerImpl implements ContentManager {
 	}
 
 	@Override
-	public synchronized void unpackContentItem(ContentItem contentItem) {
+	public void unpackContentItem(ContentItem contentItem) {
 		ContentType contentType = contentTypes.get(contentItem.getType());
 		String contentItemPackageFile = ((DirectoryContentItem) contentItem).getPath();
 
@@ -202,11 +204,7 @@ public class ContentManagerImpl implements ContentManager {
 	}
 
 	@Override
-	public synchronized ContentItem downloadContentItem(final NetworkContentItem remoteItem) throws IOException {
-		if (networkStorage == null) {
-			throw new IllegalStateException("Network storage haven't been initialized");
-		}
-
+	public ContentItem downloadContentItem(final NetworkContentItem remoteItem) throws IOException {
 		InputStream conn = null;
 		try {
 			conn = UrlUtil.getInputStream(remoteItem.getUrl());
@@ -342,6 +340,7 @@ public class ContentManagerImpl implements ContentManager {
 	@Override
 	public List<ContentItem> findSuggestedItems(Location location) {
 		List<ContentItem> matchingItems = new ArrayList<>();
+		List<ContentItem> remoteContentItems = this.remoteContentItems;
 
 		for (ContentItem remoteContentItem : remoteContentItems) {
 			Region region = regionCache.getRegion(remoteContentItem.getRegionId());

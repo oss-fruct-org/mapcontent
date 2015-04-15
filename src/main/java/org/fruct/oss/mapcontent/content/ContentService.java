@@ -250,7 +250,7 @@ public class ContentService extends Service
 					if (contentManager.checkUpdates()) {
 						notifyUpdateReady();
 					}
-				} catch (IOException e) {
+				} catch (Exception e) {
 					notifyErrorInitializing(e);
 				}
 			}
@@ -447,7 +447,7 @@ public class ContentService extends Service
 		});
 	}
 
-	private void notifyErrorInitializing(final IOException ex) {
+	private void notifyErrorInitializing(final Exception ex) {
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
@@ -580,7 +580,7 @@ public class ContentService extends Service
 
 		void errorDownloading(ContentItem item, IOException e);
 
-		void errorInitializing(IOException e);
+		void errorInitializing(Exception e);
 
 		void downloadInterrupted(ContentItem item);
 	}
