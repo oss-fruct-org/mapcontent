@@ -25,6 +25,7 @@ import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.GHContentServiceConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +48,7 @@ public class ContentFragment extends Fragment
 		// Required empty public constructor
 	}
 
-	private ContentServiceConnection remoteContentServiceConnection
-			= new ContentServiceConnection(this);
+	protected ContentServiceConnection remoteContentServiceConnection;
 	private ContentService remoteContent;
 
 	private ListView listView;
@@ -99,6 +99,10 @@ public class ContentFragment extends Fragment
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		if (remoteContentServiceConnection != null) {
+			remoteContentServiceConnection = new ContentServiceConnection(this);
+		}
 
 		downloadFragment = (DownloadProgressFragment) getActivity().getSupportFragmentManager().findFragmentByTag("download-fragment");
 		if (downloadFragment == null) {

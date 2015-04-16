@@ -20,6 +20,7 @@ import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.contenttype.GraphhopperContentType;
+import org.fruct.oss.mapcontent.content.contenttype.MapsforgeContentType;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.RegionCache;
 
@@ -40,7 +41,6 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
-
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -64,6 +64,8 @@ public class ContentService extends Service
 	private final List<Future<?>> downloadTasks = new ArrayList<>();
 	private boolean isSuggestItemRequested = false;
 
+	private boolean disableRegions6;
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -82,29 +84,7 @@ public class ContentService extends Service
 			pref.edit().putString(Settings.PREF_STORAGE_PATH, dataPath).apply();
 		}
 
-		initializationFuture = executor.submit(new Runnable() {
-			@Override
-			public void run() {
-				HashMap<String, ContentType> contentTypes = new HashMap<>();
-				contentTypes.put(ContentManagerImpl.GRAPHHOPPER_MAP, new GraphhopperContentType());
-				contentTypes.put(ContentManagerImpl.MAPSFORGE_MAP, new GraphhopperContentType());
-				contentManager = new ContentManagerImpl(ContentService.this,
-						dataPath,
-						digestCache,
-						regionCache,
-						contentTypes);
-				try {
-					contentManager.garbageCollect();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-				((ContentManagerImpl) contentManager).setListener(ContentService.this);
-				notifyInitialized();
-			}
-		});
-
 		pref.registerOnSharedPreferenceChangeListener(this);
-		locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 60000, 1000, locationListener);
 	}
 
 	@Override
@@ -146,6 +126,45 @@ public class ContentService extends Service
 	@Override
 	public IBinder onBind(Intent intent) {
 		return binder;
+	}
+
+	public void initialize(final String[] requestedContentTypes, boolean enableRegions6) {
+		this.disableRegions6 = !enableRegions6;
+		initializationFuture = executor.submit(new Runnable() {
+			@Override
+			public void run() {
+				HashMap<String, ContentType> contentTypes = new HashMap<>();
+
+				for (String requestedContentType : requestedContentTypes) {
+					switch (requestedContentType) {
+					case ContentManagerImpl.GRAPHHOPPER_MAP:
+						contentTypes.put(requestedContentType, new GraphhopperContentType());
+						break;
+
+					case ContentManagerImpl.MAPSFORGE_MAP:
+						contentTypes.put(requestedContentType, new MapsforgeContentType(regionCache));
+						break;
+					}
+				}
+
+				contentManager = new ContentManagerImpl(ContentService.this,
+						dataPath,
+						digestCache,
+						regionCache,
+						contentTypes);
+				try {
+					contentManager.garbageCollect();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+
+				((ContentManagerImpl) contentManager).setListener(ContentService.this);
+				locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+						60000, 1000, locationListener, Looper.getMainLooper());
+
+				notifyInitialized();
+			}
+		});
 	}
 
 	public boolean isInitialized() {
@@ -271,7 +290,7 @@ public class ContentService extends Service
 		}
 
 		File regions6Dir = new File(unpackedItemPath, "regions6");
-		if (regions6Dir.exists() && regions6Dir.isDirectory()) {
+		if (!disableRegions6 && regions6Dir.exists() && regions6Dir.isDirectory()) {
 			regionCache.setAdditionalRegions(regions6Dir);
 		}
 

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 import org.fruct.oss.mapcontent.content.ContentService;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +39,7 @@ public class ContentServiceConnection implements ServiceConnection {
 			listener.onContentServiceReady(contentService);
 		} else {
 			contentService.addInitializationListener(this);
+			doInitialization(contentService);
 		}
 	}
 
@@ -48,5 +50,11 @@ public class ContentServiceConnection implements ServiceConnection {
 
 	public void onContentServiceInitialized() {
 		listener.onContentServiceReady(contentService);
+	}
+
+	protected void doInitialization(ContentService contentService) {
+		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP,
+						ContentManagerImpl.MAPSFORGE_MAP},
+				true);
 	}
 }

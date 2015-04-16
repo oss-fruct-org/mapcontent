@@ -6,6 +6,7 @@ import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 import org.fruct.oss.mapcontent.content.DirectoryContentItem;
 import org.fruct.oss.mapcontent.content.utils.Region;
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
 import org.mapsforge.core.model.Tile;
@@ -23,10 +24,10 @@ import java.util.Map;
 public class MapsforgeContentType implements ContentType {
 	private static final Logger log = LoggerFactory.getLogger(MapsforgeContentType.class);
 
-	private final Map<String, Region> regionsCache;
+	private final RegionCache regionsCache;
 
-	public MapsforgeContentType(Map<String, Region> regions) {
-		this.regionsCache = regions;
+	public MapsforgeContentType(RegionCache regionsCache) {
+		this.regionsCache = regionsCache;
 	}
 
 	@Override
@@ -43,7 +44,7 @@ public class MapsforgeContentType implements ContentType {
 	public boolean checkRegion(ContentItem contentItem, String contentItemPackageFile, Location location) {
 		boolean ret = false;
 
-		Region region = regionsCache.get(contentItem.getRegionId());
+		Region region = regionsCache.getRegion(contentItem.getRegionId());
 		if (region != null) {
 			return region.testHit(location.getLatitude(), location.getLongitude());
 		}
