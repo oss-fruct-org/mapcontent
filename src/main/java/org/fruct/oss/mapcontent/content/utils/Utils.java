@@ -1,6 +1,9 @@
 package org.fruct.oss.mapcontent.content.utils;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -72,4 +75,11 @@ public class Utils {
 		} catch (IOException ignored) {
 		}
 	}
+
+	public static boolean checkNetworkAvailability(Context context) {
+		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo info = connManager.getActiveNetworkInfo();
+		return info != null && info.isConnected();
+	}
+
 }

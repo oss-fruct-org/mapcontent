@@ -5,12 +5,14 @@ import org.fruct.oss.mapcontent.content.ContentService;
 import org.jetbrains.annotations.NotNull;
 
 public class GHContentServiceConnection extends ContentServiceConnection {
-	public GHContentServiceConnection(@NotNull ContentServiceConnectionListener listener) {
+	public GHContentServiceConnection(ContentServiceConnectionListener listener) {
 		super(listener);
 	}
 
 	@Override
 	protected void doInitialization(ContentService contentService) {
-		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP}, false);
+		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP},
+				ContentService.DEFAULT_ROOT_URLS,
+				false);
 	}
 }

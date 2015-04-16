@@ -21,6 +21,7 @@ import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.contenttype.ContentType;
 import org.fruct.oss.mapcontent.content.contenttype.GraphhopperContentType;
 import org.fruct.oss.mapcontent.content.contenttype.MapsforgeContentType;
+import org.fruct.oss.mapcontent.content.fragments.ContentFragment;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.fruct.oss.mapcontent.content.utils.RegionCache;
 
@@ -41,6 +42,8 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
+	public static final String[] DEFAULT_ROOT_URLS = {"http://oss.fruct.org/projects/roadsigns/root.xml"};
+
 	private Binder binder = new Binder();
 
 	private KeyValue digestCache;
@@ -65,6 +68,7 @@ public class ContentService extends Service
 	private boolean isSuggestItemRequested = false;
 
 	private boolean disableRegions6;
+	private String[] rootUrls = DEFAULT_ROOT_URLS;
 
 	@Override
 	public void onCreate() {
@@ -128,8 +132,10 @@ public class ContentService extends Service
 		return binder;
 	}
 
-	public void initialize(final String[] requestedContentTypes, boolean enableRegions6) {
+	public void initialize(final String[] requestedContentTypes, final String[] rootUrls, boolean enableRegions6) {
 		this.disableRegions6 = !enableRegions6;
+		this.rootUrls = rootUrls;
+
 		initializationFuture = executor.submit(new Runnable() {
 			@Override
 			public void run() {
@@ -250,10 +256,9 @@ public class ContentService extends Service
 	/**
 	 * Request content list update
 	 * Listener will be used to notify about content list update
-	 * @param rootUrls URL of content root xmls in order of priority
 	 * @param forceRefresh if set to false, refresh will be skipped if data already loaded
 	 */
-	public void refresh(final String[] rootUrls, boolean forceRefresh) {
+	public void refresh(boolean forceRefresh) {
 		if (!forceRefresh && !contentManager.getRemoteContentItems().isEmpty()) {
 			return;
 		}

@@ -11,14 +11,17 @@ import org.fruct.oss.mapcontent.content.ContentService;
 import org.jetbrains.annotations.NotNull;
 
 public class ContentServiceConnection implements ServiceConnection {
-	private final ContentServiceConnectionListener listener;
+	private ContentServiceConnectionListener listener;
 
 	private ContentService contentService;
 
-	public ContentServiceConnection(@NotNull ContentServiceConnectionListener listener) {
+	public ContentServiceConnection(ContentServiceConnectionListener listener) {
 		this.listener = listener;
 	}
 
+	public void setListener(@NotNull ContentServiceConnectionListener listener) {
+		this.listener = listener;
+	}
 
 	public void bindService(@NotNull Context context) {
 		Intent intent = new Intent(context, ContentService.class);
@@ -55,6 +58,7 @@ public class ContentServiceConnection implements ServiceConnection {
 	protected void doInitialization(ContentService contentService) {
 		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP,
 						ContentManagerImpl.MAPSFORGE_MAP},
+				ContentService.DEFAULT_ROOT_URLS,
 				true);
 	}
 }

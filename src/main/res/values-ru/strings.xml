@@ -18,4 +18,28 @@
     <string name="str_cant_delete_active_content">Нельзя удалить активные данные</string>
     <string name="str_starting_download">Начало загрузки</string>
     <string name="update_availabe">Доступно обновление</string>
+
+
+    <string name="pref_disable_warn_network_sum">Не предупреждать о недоступной сети</string>
+    <string name="pref_disable_warn_network">Недоступная сеть</string>
+
+    <string name="pref_disable_warn_navigation_sum">Не предупреждать о данных навигации</string>
+    <string name="pref_disable_warn_navigation">Данные навигации</string>
+
+    <string name="pref_disable_warn_providers">Отключенные источники местоположения</string>
+    <string name="pref_disable_warn_providers_sum">Не предупреждать об отключенных источниках местоположения</string>
+
+    <string name="pref_disable_warn_update_ready">Обновления</string>
+    <string name="pref_disable_warn_update_ready_sum">Не предупреждать об обновлениях</string>
+
+    <string name="pref_warnings">Предупреждения</string>
+    <string name="alert_content_not_available">Приложению требуются данные навигации</string>
+    <string name="alert_content_not_available_title">Карты</string>
+    <string name="alert_location_not_available">Приложению требуется определить местоположение</string>
+    <string name="alert_location_not_available_title">Местоположение</string>
+    <string name="alert_network_not_available">Приложению требуется доступ к сети</string>
+    <string name="alert_network_not_available_title">Сеть</string>
+    <string name="alert_update_ready">Доступно обновление карт</string>
+    <string name="alert_update_ready_title">Обновление</string>
+
 </resources>

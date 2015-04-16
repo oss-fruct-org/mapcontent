@@ -42,6 +42,9 @@ public class ContentFragment extends Fragment
 		ActionBar.OnNavigationListener,
 		ContentServiceConnectionListener,
 		ContentService.Listener, ContentService.ItemListener {
+	public static final String ACTION_SHOW_ONLINE_CONTENT = "org.fruct.oss.ikm.ACTION_SHOW_ONLINE_CONTENT";
+	public static final String ACTION_UPDATE_READY = "org.fruct.oss.ikm.ACTION_UPDATE_READY";
+
 	private final static Logger log = LoggerFactory.getLogger(ContentFragment.class);
 
 	public ContentFragment() {
@@ -69,8 +72,6 @@ public class ContentFragment extends Fragment
 	private SharedPreferences pref;
 
 	private DownloadProgressFragment downloadFragment;
-
-	private String[] rootUrls = {"http://oss.fruct.org/projects/roadsigns/root.xml"};
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -121,6 +122,10 @@ public class ContentFragment extends Fragment
 
 		downloadFragment.setListener(this);
 		setHasOptionsMenu(true);
+
+		if (getArguments() != null && getArguments().getBoolean("suggest")) {
+			suggestItem();
+		}
 	}
 
 	@Override
@@ -167,7 +172,7 @@ public class ContentFragment extends Fragment
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.action_refresh) {
 			if (remoteContent != null) {
-				remoteContent.refresh(rootUrls, true);
+				remoteContent.refresh(true);
 			}
 		}
 
@@ -422,7 +427,7 @@ public class ContentFragment extends Fragment
 		remoteContent.addListener(this);
 		remoteContent.addItemListener(this);
 
-		remoteContent.refresh(rootUrls, false);
+		remoteContent.refresh(false);
 		setContentList(localItems = new ArrayList<>(remoteContent.getLocalContentItems()),
 				remoteItems = new ArrayList<>(remoteContent.getRemoteContentItems()));
 	}
@@ -430,10 +435,6 @@ public class ContentFragment extends Fragment
 	@Override
 	public void onContentServiceDisconnected() {
 		remoteContent = null;
-	}
-
-	public void setRootUrls(String[] rootUrls) {
-		this.rootUrls = rootUrls;
 	}
 
 	private class GenerateContentList extends AsyncTask<Void, Void, List<ContentListItem>> {
