@@ -189,6 +189,7 @@ public class ContentHelper {
 		@Override
 		public void recommendedRegionItemNotFound(String contentType) {
 			if (contentType.equals(ContentManagerImpl.GRAPHHOPPER_MAP) && isContentNotificationsEnabled) {
+				isContentNotificationsEnabled = false;
 				showContentDialog();
 			}
 		}
@@ -196,6 +197,7 @@ public class ContentHelper {
 		@Override
 		public void updateReady() {
 			if (isUpdateNotificationsEnabled) {
+				isUpdateNotificationsEnabled = false;
 				showUpdateDialog();
 			}
 		}

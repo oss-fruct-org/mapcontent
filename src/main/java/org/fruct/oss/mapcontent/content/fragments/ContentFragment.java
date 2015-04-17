@@ -101,7 +101,7 @@ public class ContentFragment extends Fragment
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		if (remoteContentServiceConnection != null) {
+		if (remoteContentServiceConnection == null) {
 			remoteContentServiceConnection = new ContentServiceConnection(this);
 		}
 
