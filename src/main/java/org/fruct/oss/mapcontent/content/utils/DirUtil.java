@@ -71,7 +71,7 @@ public class DirUtil {
 
 			log.info("Zip archive successfully extracted");
 		} catch (IOException e) {
-			log.error("Can't extract archive {}", zipFile);
+			log.error("Can't extract archive {}", zipFile, e);
 			throw e;
 		} finally {
 			Utils.silentClose(zipInputStream);
