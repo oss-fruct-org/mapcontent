@@ -41,5 +41,7 @@
     <string name="alert_network_not_available_title">Сеть</string>
     <string name="alert_update_ready">Доступно обновление карт</string>
     <string name="alert_update_ready_title">Обновление</string>
+    <string name="str_configure">Настроить</string>
+    <string name="str_dont_notify">Больше не предупреждать</string>
 
 </resources>
