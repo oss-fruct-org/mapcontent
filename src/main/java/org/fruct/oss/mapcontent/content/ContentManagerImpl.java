@@ -344,7 +344,7 @@ public class ContentManagerImpl implements ContentManager {
 
 		for (ContentItem remoteContentItem : remoteContentItems) {
 			Region region = regionCache.getRegion(remoteContentItem.getRegionId());
-			if (region.testHit(location.getLatitude(), location.getLongitude())) {
+			if (region != null && region.testHit(location.getLatitude(), location.getLongitude())) {
 				matchingItems.add(remoteContentItem);
 			}
 		}

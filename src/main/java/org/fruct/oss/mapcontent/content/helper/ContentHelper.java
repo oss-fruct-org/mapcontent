@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import org.fruct.oss.mapcontent.R;
 import org.fruct.oss.mapcontent.content.ContentItem;
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
@@ -170,6 +171,7 @@ public class ContentHelper {
 		public void onContentServiceReady(ContentService contentService) {
 			ContentHelper.this.contentService = contentService;
 			contentService.addItemListener(itemListener);
+			contentService.refresh(false);
 			contentService.requestRecommendedItem();
 		}
 
@@ -186,7 +188,7 @@ public class ContentHelper {
 
 		@Override
 		public void recommendedRegionItemNotFound(String contentType) {
-			if (isContentNotificationsEnabled) {
+			if (contentType.equals(ContentManagerImpl.GRAPHHOPPER_MAP) && isContentNotificationsEnabled) {
 				showContentDialog();
 			}
 		}

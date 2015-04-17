@@ -270,15 +270,9 @@ public class ContentFragment extends Fragment
 
 	@Override
 	public void suggestedItemsReady(List<String> regionIds) {
-		if (!isSuggestRequested) {
-			return;
-		}
-
 		if (contentListItems == null) {
 			return;
 		}
-
-		isSuggestRequested = false;
 
 		for (String regionId : regionIds) {
 			for (ContentListItem contentListItem : contentListItems) {
@@ -524,6 +518,7 @@ public class ContentFragment extends Fragment
 
 				if (isSuggestRequested) {
 					remoteContent.requestSuggestedRegion();
+					isSuggestRequested = false;
 				}
 			}
 		}

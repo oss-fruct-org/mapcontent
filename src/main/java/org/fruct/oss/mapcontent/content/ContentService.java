@@ -42,7 +42,7 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
-	public static final String[] DEFAULT_ROOT_URLS = {"http://oss.fruct.org/projects/roadsigns/root.xml"};
+	public static final String[] DEFAULT_ROOT_URLS = {"http://gets.cs.petrsu.ru/maps/root/root.xml"};
 
 	private Binder binder = new Binder();
 
@@ -64,6 +64,8 @@ public class ContentService extends Service
 	private LocationListener locationListener = new ContentServiceLocationListener();
 
 	private Future<?> initializationFuture;
+	private Future<?> refreshFuture;
+
 	private final List<Future<?>> downloadTasks = new ArrayList<>();
 	private boolean isSuggestItemRequested = false;
 
@@ -123,6 +125,8 @@ public class ContentService extends Service
 				for (ContentServiceConnection connection : initializationListeners) {
 					connection.onContentServiceInitialized();
 				}
+
+				initializationListeners.clear();
 			}
 		});
 	}
@@ -259,11 +263,15 @@ public class ContentService extends Service
 	 * @param forceRefresh if set to false, refresh will be skipped if data already loaded
 	 */
 	public void refresh(boolean forceRefresh) {
+		if (refreshFuture != null && !refreshFuture.isDone()) {
+			return;
+		}
+
 		if (!forceRefresh && !contentManager.getRemoteContentItems().isEmpty()) {
 			return;
 		}
 
-		executor.execute(new Runnable() {
+		refreshFuture = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				try {
