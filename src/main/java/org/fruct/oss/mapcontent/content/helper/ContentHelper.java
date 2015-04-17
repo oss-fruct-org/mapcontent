@@ -150,13 +150,13 @@ public class ContentHelper {
 
 	private void showUpdateDialog() {
 		if (checkWarnEnabled(PREF_WARN_UPDATES)) {
-			WarnDialog warnDialog = WarnDialog.newInstance(R.string.alert_content_not_available,
-					R.string.alert_content_not_available_title,
+			WarnDialog warnDialog = WarnDialog.newInstance(R.string.alert_update_ready,
+					R.string.alert_update_ready_title,
 					PREF_WARN_UPDATES,
 					onConfigureUpdateIntent);
-			warnDialog.show(activity.getSupportFragmentManager(), "warn-dialog-content");
+			warnDialog.show(activity.getSupportFragmentManager(), "warn-dialog-update");
 		} else {
-			Toast.makeText(activity, R.string.alert_content_not_available, Toast.LENGTH_SHORT).show();
+			Toast.makeText(activity, R.string.alert_update_ready, Toast.LENGTH_SHORT).show();
 		}
 	}
 

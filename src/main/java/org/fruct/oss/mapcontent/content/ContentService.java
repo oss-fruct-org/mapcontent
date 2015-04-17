@@ -234,6 +234,9 @@ public class ContentService extends Service
 					ContentItem localContentItem = contentManager.downloadContentItem(remoteItem);
 					notifyDownloadFinished(contentItem, localContentItem);
 					notifyLocalListReady(getLocalContentItems());
+					if (lastLocation != null) {
+						checkRegion(lastLocation);
+					}
 				} catch (InterruptedIOException e) {
 					notifyDownloadInterrupted(contentItem);
 				} catch (IOException e) {
