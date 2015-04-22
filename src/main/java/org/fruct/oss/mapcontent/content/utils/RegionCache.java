@@ -184,7 +184,7 @@ public class RegionCache {
 				try {
 					localeName = names.getString(Locale.getDefault().getLanguage());
 				} catch (JSONException e) {
-					localeName = names.keys().next();
+					localeName = names.getString(names.keys().next());
 				}
 
 				File polyFile = new File(cacheDir, polyFileName);
