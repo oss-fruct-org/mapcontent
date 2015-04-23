@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.mapcontent.R;
@@ -298,6 +299,7 @@ public class ContentService extends Service
 	 * @param contentItem local item to request
 	 * @return path
 	 */
+	@Nullable
 	public String requestContentItem(ContentItem contentItem) {
 		String unpackedItemPath = contentManager.activateContentItem(contentItem);
 
