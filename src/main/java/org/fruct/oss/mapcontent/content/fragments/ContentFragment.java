@@ -1,5 +1,6 @@
 package org.fruct.oss.mapcontent.content.fragments;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -62,6 +63,8 @@ public class ContentFragment extends Fragment
 	private String currentItemName;
 
 	private boolean isSuggestRequested;
+	private boolean isSuggestWaitingCompletion;
+	private int countRequested;
 
 	private LocalContentState filteredState;
 	private List<ContentListItem> contentListItems;
@@ -218,6 +221,8 @@ public class ContentFragment extends Fragment
 				downloadFragment.stopDownload();
 			}
 		});
+		countRequested--;
+		checkSuggestDownloadFinished();
 	}
 
 	@Override
@@ -229,6 +234,8 @@ public class ContentFragment extends Fragment
 				downloadFragment.stopDownload();
 			}
 		});
+		countRequested--;
+		checkSuggestDownloadFinished();
 	}
 
 	@Override
@@ -246,6 +253,8 @@ public class ContentFragment extends Fragment
 				adapter.notifyDataSetChanged();
 			}
 		});
+		countRequested--;
+		checkSuggestDownloadFinished();
 	}
 
 	@Override
@@ -268,6 +277,15 @@ public class ContentFragment extends Fragment
 
 	}
 
+	private void checkSuggestDownloadFinished() {
+		if (isSuggestWaitingCompletion && countRequested == 0) {
+			onAllItemsLoaded();
+		}
+	}
+
+	public void onAllItemsLoaded() {
+	}
+
 	@Override
 	public void suggestedItemsReady(List<String> regionIds) {
 		if (contentListItems == null) {
@@ -283,6 +301,7 @@ public class ContentFragment extends Fragment
 					dialog.setListener(this);
 					dialog.setStorageItems(contentListItem.contentSubItems);
 					dialog.show(getFragmentManager(), "content-dialog");
+
 					return;
 				}
 			}
@@ -297,6 +316,10 @@ public class ContentFragment extends Fragment
 		downloadFragment.startDownload();
 		for (ContentListSubItem item : items)
 			remoteContent.downloadItem(item.contentItem);
+
+		if (isSuggestWaitingCompletion) {
+			countRequested = items.size();
+		}
 	}
 
 	@Override
@@ -519,6 +542,7 @@ public class ContentFragment extends Fragment
 				if (isSuggestRequested) {
 					remoteContent.requestSuggestedRegion();
 					isSuggestRequested = false;
+					isSuggestWaitingCompletion = true;
 				}
 			}
 		}
