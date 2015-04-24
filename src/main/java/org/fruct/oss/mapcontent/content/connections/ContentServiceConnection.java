@@ -42,7 +42,9 @@ public class ContentServiceConnection implements ServiceConnection {
 			listener.onContentServiceReady(contentService);
 		} else {
 			contentService.addInitializationListener(this);
-			doInitialization(contentService);
+			if (!contentService.isInitializing()) {
+				doInitialization(contentService);
+			}
 		}
 	}
 

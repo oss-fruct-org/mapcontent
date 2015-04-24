@@ -162,7 +162,8 @@ public class ContentService extends Service
 						dataPath,
 						digestCache,
 						regionCache,
-						contentTypes);
+						contentTypes,
+						disableRegions6);
 				try {
 					contentManager.garbageCollect();
 				} catch (Exception ex) {
@@ -176,6 +177,10 @@ public class ContentService extends Service
 				notifyInitialized();
 			}
 		});
+	}
+
+	public boolean isInitializing() {
+		return initializationFuture != null && !initializationFuture.isDone() && !initializationFuture.isCancelled();
 	}
 
 	public boolean isInitialized() {
@@ -307,10 +312,6 @@ public class ContentService extends Service
 			return null;
 		}
 
-		File regions6Dir = new File(unpackedItemPath, "regions6");
-		if (!disableRegions6 && regions6Dir.exists() && regions6Dir.isDirectory()) {
-			regionCache.setAdditionalRegions(regions6Dir);
-		}
 
 		return unpackedItemPath;
 	}

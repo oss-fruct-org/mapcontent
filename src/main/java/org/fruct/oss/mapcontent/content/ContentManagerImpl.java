@@ -52,9 +52,15 @@ public class ContentManagerImpl implements ContentManager {
 	private List<ContentItem> remoteContentItems = Collections.emptyList();
 
 	private Listener listener;
+	private boolean disableRegions6;
 
-	public ContentManagerImpl(Context context, String contentRootPath, KeyValue digestCache, RegionCache regionCache,
-							  HashMap<String, ContentType> contentTypes) {
+	public ContentManagerImpl(Context context,
+							  String contentRootPath,
+							  KeyValue digestCache,
+							  RegionCache regionCache,
+							  HashMap<String, ContentType> contentTypes,
+							  boolean disableRegions6) {
+		this.disableRegions6 = disableRegions6;
 		this.contentRootPath = contentRootPath;
 		this.digestCache = digestCache;
 		this.regionCache = regionCache;
@@ -72,8 +78,12 @@ public class ContentManagerImpl implements ContentManager {
 		this.contentTypes.putAll(contentTypes);
 
 		refreshLocalItemsList();
-	}
 
+		String activeUnpackedDir = getActiveUnpacked(GRAPHHOPPER_MAP);
+		if (activeUnpackedDir != null) {
+			loadRegions6Cache(new File(activeUnpackedDir));
+		}
+	}
 	public void setListener(Listener listener) {
 		this.listener = listener;
 	}
@@ -177,6 +187,10 @@ public class ContentManagerImpl implements ContentManager {
 				contentType.unpackContentItem(contentItem, contentItemPackageFile,
 						unpackedDir.getUnpackedDir().toString());
 				unpackedDir.markUnpacked();
+
+				if (contentItem.getType().equals(GRAPHHOPPER_MAP)) {
+					loadRegions6Cache(unpackedDir.getUnpackedDir());
+				}
 			} catch (IOException e) {
 				// TODO: handle error
 			}
@@ -195,6 +209,7 @@ public class ContentManagerImpl implements ContentManager {
 					.putString(getActiveUnpackedPrefKey(contentItem.getType()),
 							unpackedDir.getUnpackedDir().toString())
 					.apply();
+
 			return unpackedDir.getUnpackedDir().toString();
 		} else {
 			return null;
@@ -393,8 +408,21 @@ public class ContentManagerImpl implements ContentManager {
 			}
 
 			localContentItems = localItems;
+
 		} catch (IOException e) {
 			// TODO: error
+		}
+	}
+
+	private void loadRegions6Cache(File unpackedDir) {
+		if (disableRegions6 || unpackedDir == null)
+			return;
+
+
+		log.debug("Loading regions6 cache from path {}", unpackedDir.toString());
+		File regions6Dir = new File(unpackedDir, "regions6");
+		if (regions6Dir.exists() && regions6Dir.isDirectory()) {
+			regionCache.setAdditionalRegions(regions6Dir);
 		}
 	}
 
