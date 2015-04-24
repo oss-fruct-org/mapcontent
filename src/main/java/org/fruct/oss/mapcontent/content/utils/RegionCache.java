@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,6 +44,11 @@ public class RegionCache {
 		loadCachedFiles(cacheDir);
 	}
 
+	public synchronized RegionDesc getRegionDesc(String regionId) {
+		return cachedFiles.get(regionId);
+	}
+
+	@Nullable
 	public synchronized Region getRegion(String regionId) {
 		Region region = regionsCache.get(regionId);
 		if (region != null) {
@@ -116,7 +122,7 @@ public class RegionCache {
 		List<RegionDesc> foundRegions = new ArrayList<>();
 		for (RegionDesc regionDesc : cachedFiles.values()) {
 			Region region = getRegion(regionDesc.regionId);
-			if (region.testHit(location.getLatitude(), location.getLongitude())) {
+			if (region != null && region.testHit(location.getLatitude(), location.getLongitude())) {
 				foundRegions.add(regionDesc);
 			}
 		}

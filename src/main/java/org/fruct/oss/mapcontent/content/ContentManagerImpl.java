@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class ContentManagerImpl implements ContentManager {
@@ -154,7 +153,6 @@ public class ContentManagerImpl implements ContentManager {
 					matchingItems.add(contentItem);
 				}
 			} else {
-				// TODO: don't update this every time
 				regionCache.putRegion(contentItem.getRegionId(), region);
 				if (region.testHit(location.getLatitude(), location.getLongitude())) {
 					matchingItems.add(contentItem);

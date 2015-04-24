@@ -16,27 +16,8 @@ public class Region {
 	private static final double DELTA = 0.0001;
 	private final List<Polygon> polygons;
 
-	private final String name;
-	private final int adminLevel;
-
 	public Region(InputStream input) throws IOException {
 		this.polygons = Polygon.fromPath(input);
-		this.name = "";
-		this.adminLevel = 4; // 4 in Russia is "federal subject"
-	}
-
-	public Region(InputStream input, String name, int adminLevel) throws IOException {
-		this.polygons = Polygon.fromPath(input);
-		this.name = name;
-		this.adminLevel = adminLevel;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public int getAdminLevel() {
-		return adminLevel;
 	}
 
 	public boolean testHit(double rLat, double rLon) {
