@@ -43,7 +43,7 @@ import java.util.concurrent.Future;
 public class ContentService extends Service
 		implements SharedPreferences.OnSharedPreferenceChangeListener,
 		ContentManager.Listener {
-	public static final String[] DEFAULT_ROOT_URLS = {"http://gets.cs.petrsu.ru/maps/root/root.xml"};
+	private static final String[] DEFAULT_ROOT_URLS = {"http://gets.cs.petrsu.ru/maps/root/root.xml"};
 
 	private Binder binder = new Binder();
 
@@ -218,6 +218,10 @@ public class ContentService extends Service
 			}
 			downloadTasks.clear();
 		}
+	}
+
+	public static String[] getDefaultRootURLs() {
+		return DEFAULT_ROOT_URLS;
 	}
 
 	public boolean deleteContentItem(ContentItem contentItem) {

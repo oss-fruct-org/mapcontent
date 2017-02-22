@@ -15,8 +15,11 @@ public class ContentServiceConnection implements ServiceConnection {
 
 	private ContentService contentService;
 
+	protected String[] rootURLs;
+
 	public ContentServiceConnection(ContentServiceConnectionListener listener) {
 		this.listener = listener;
+		rootURLs = ContentService.getDefaultRootURLs();
 	}
 
 	public void setListener(@NotNull ContentServiceConnectionListener listener) {
@@ -48,6 +51,10 @@ public class ContentServiceConnection implements ServiceConnection {
 		}
 	}
 
+	public void setRootURLs(String[] newRootURLs) {
+		rootURLs = newRootURLs;
+	}
+
 	@Override
 	public void onServiceDisconnected(ComponentName name) {
 		listener.onContentServiceDisconnected();
@@ -60,7 +67,7 @@ public class ContentServiceConnection implements ServiceConnection {
 	protected void doInitialization(ContentService contentService) {
 		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP,
 						ContentManagerImpl.MAPSFORGE_MAP},
-				ContentService.DEFAULT_ROOT_URLS,
+				rootURLs,
 				true);
 	}
 }

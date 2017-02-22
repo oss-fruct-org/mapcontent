@@ -12,7 +12,7 @@ public class GHContentServiceConnection extends ContentServiceConnection {
 	@Override
 	protected void doInitialization(ContentService contentService) {
 		contentService.initialize(new String[]{ContentManagerImpl.GRAPHHOPPER_MAP},
-				ContentService.DEFAULT_ROOT_URLS,
+				rootURLs,
 				false);
 	}
 }
