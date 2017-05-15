@@ -54,6 +54,12 @@ public class ContentHelper {
 		this.contentServiceConnection.setListener(listener);
 	}
 
+	public void setRootURLs(String[] urls) {
+        if (this.contentServiceConnection != null) {
+            this.contentServiceConnection.setRootURLs(urls);
+        }
+    }
+
 	public void onStart(boolean skipChecks) {
 		contentServiceConnection.bindService(activity);
 
