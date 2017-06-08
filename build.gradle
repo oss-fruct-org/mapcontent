@@ -1,12 +1,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         minSdkVersion 10
-        targetSdkVersion 22
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
     }
@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:22.0.0'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'org.mapsforge:mapsforge-map-android:0.5.0'
     compile 'org.jetbrains:annotations:13.0'

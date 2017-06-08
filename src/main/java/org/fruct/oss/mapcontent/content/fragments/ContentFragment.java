@@ -1,14 +1,14 @@
 package org.fruct.oss.mapcontent.content.fragments;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.view.ActionMode;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -26,7 +26,6 @@ import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
-import org.fruct.oss.mapcontent.content.connections.GHContentServiceConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +84,8 @@ public class ContentFragment extends Fragment
 		if (savedInstanceState != null)
 			currentItemName = savedInstanceState.getString("current-item-idx");
 
-		setupSpinner();
+		//setupSpinner();
+        setHasOptionsMenu(true);
 
 		adapter = new ContentAdapter(getActivity(), R.layout.file_list_item, Collections.<ContentListItem>emptyList());
 
@@ -150,14 +150,14 @@ public class ContentFragment extends Fragment
 		super.onPause();
 	}
 
-	private void setupSpinner() {
-		ActionBar actionBar = ((ActionBarActivity) getActivity()).getSupportActionBar();
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-		SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(getActivity(), R.array.content_spinner,
-				R.layout.support_simple_spinner_dropdown_item);
-		actionBar.setListNavigationCallbacks(spinnerAdapter, this);
-		actionBar.setSelectedNavigationItem(getArguments() != null && getArguments().getBoolean("update") ? 2 : 0);
-	}
+//    private void setupSpinner() {
+//        ActionBar actionBar = ((FragmentActivity) getActivity()).getActionBar();
+//        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+//        SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(getActivity(), R.array.content_spinner,
+//                R.layout.support_simple_spinner_dropdown_item);
+//        actionBar.setListNavigationCallbacks(spinnerAdapter, this);
+//        actionBar.setSelectedNavigationItem(getArguments() != null && getArguments().getBoolean("update") ? 2 : 0);
+//    }
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
@@ -325,7 +325,7 @@ public class ContentFragment extends Fragment
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		currentItem = adapter.getItem(position);
-		((ActionBarActivity) getActivity()).startSupportActionMode(this);
+		((FragmentActivity) getActivity()).startActionMode(this);
 	}
 
 	@Override
